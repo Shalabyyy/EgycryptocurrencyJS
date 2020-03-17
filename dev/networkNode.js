@@ -253,10 +253,12 @@ app.get('/block/:blockhash',(req,res)=>{
   res.json({block:block})
 })
 app.get('/transaction/:transactionId',(req,res)=>{
-
+  const transaction = currency.getTransaction(req.params.transactionId)
+  res.json({transaction:transaction})
 })
 app.get('/address/:address',(req,res)=>{
-
+  const transactions = currency.getAddressdata(req.params.address)
+  res.json({result:transactions})
 })
 app.listen(port, () => {
   console.log(`Listening on port ${port}`);
