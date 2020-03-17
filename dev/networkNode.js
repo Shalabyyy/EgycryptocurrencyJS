@@ -258,8 +258,13 @@ app.get('/transaction/:transactionId',(req,res)=>{
 })
 app.get('/address/:address',(req,res)=>{
   const transactions = currency.getAddressdata(req.params.address)
-  res.json({result:transactions})
+  res.json({result  :transactions})
 })
+
+app.get('/block-explorer', function(req, res) {
+	res.sendFile('./block-explorer/index.html', { root: __dirname });
+});
+
 app.listen(port, () => {
   console.log(`Listening on port ${port}`);
 });
