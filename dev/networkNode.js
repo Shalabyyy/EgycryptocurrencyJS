@@ -21,16 +21,63 @@ app.get("/blockchain", (req, res) => {
 
 //Do a transaction
 app.post("/transaction", (req, res) => {
-  const message = currency.createNewTransaction(
-    req.body.sender,
-    req.body.recipient,
-    req.body.amount
-  );
+  const newTransaction = req.body;
+  const message = currency.addTransactionToPendingTransactions(newTransaction);
   return res.json({
     message: `The transaction will be added to block ${message}`
   });
 });
+app.post("/transaction/broadcast", (req, res) => {
+  const newTransaction = currency.createNewTransaction(
+    req.body.sender,
+    req.body.recipient,
+    req.body.amount
+  );
+  //Add to my own Array
 
+  currency.addTransactionToPendingTransactions(newTransaction);
+
+  //Broadcast to the rest of the Nodes
+  const requestPromises = [];
+  currency.networkNodes.forEach(networkNodeUrl => {
+    console.log("JAck ass:" + networkNodeUrl);
+    const requestOptions = {
+      uri: networkNodeUrl + "/transaction",
+      method: "POST",
+      body: newTransaction,
+      json: true
+    };
+    requestPromises.push(rp(requestOptions));
+  });
+  Promise.all(requestPromises).then(data => {
+    res.json({ message: "The Broadcast was successfull" });
+  });
+});
+
+app.post("/receive-new-block", (req, res) => {
+  const newBlock = req.body.newBlock;
+  console.log(newBlock)
+  const lastBlock = currency.getLastBlock();
+  const correctHash = lastBlock.hash === newBlock.previousBlockHash;
+  const correctIndex = lastBlock.index + 1 == newBlock.index;
+  console.log(lastBlock.hash +" -" +newBlock.previousBlockHash)
+  console.log(lastBlock.index+1)
+  console.log(newBlock.index)
+  if (correctHash && correctIndex) {
+    //accept
+    currency.chain.push(newBlock);
+    currency.pendingTransactions = [];
+    console.log("Block Accepted")
+    return res.json({
+      message: "New Block received and accepeted",
+      newBlock: newBlock
+    });
+  } else {
+    //reject
+    console.log("Block Rejected")
+    return res.json({ message: "New Block Rejected", newBlock: newBlock });
+  }
+});
 //Mine block
 app.get("/mine", (req, res) => {
   //Get Previous hash
@@ -45,10 +92,39 @@ app.get("/mine", (req, res) => {
   const nonce = currency.proofOfWork(previousBlockhash, currentBlockData);
   const hash = currency.hashBlock(previousBlockhash, currentBlockData, nonce);
   const newBlock = currency.createNewBlock(nonce, previousBlockhash, hash);
+  //reward Miner
 
-  //Reward Miner
-  currency.createNewTransaction(12.5, "00", "Add Miner Public Address Here");
-  return res.json({ message: "New Blocked Mined", block: newBlock });
+  const requestPromises = [];
+  currency.networkNodes.forEach(nodeUrl => {
+    const requestOptions = {
+      uri: nodeUrl + "/receive-new-block",
+      method: "POST",
+      body: { newBlock: newBlock },
+      json: true
+    };
+    requestPromises.push(rp(requestOptions));
+  });
+  Promise.all(requestPromises)
+    .then(data => {
+      //Award Miner
+      const requestOptions = {
+        uri: currency.currentNodeUrl + "/transaction/broadcast",
+        method: "POST",
+        body: {
+          amount: 12.5,
+          sender: "00",
+          recipient: currency.currentNodeUrl
+        },
+        json: true
+      };
+      return rp(requestOptions);
+    })
+    .then(data => {
+      return res.json({
+        message: "New block mined and broadcasted successfuly",
+        block: newBlock
+      });
+    });
 });
 
 //Add a node to the network an broadcast

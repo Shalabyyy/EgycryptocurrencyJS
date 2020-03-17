@@ -26,12 +26,17 @@ Blockchain.prototype.getLastBlock = function(){
     return this.chain[this.chain.length-1]
 }
 Blockchain.prototype.createNewTransaction = function(sender,recipient, amount){
+    const hash = SHA256(sender+amount.toString()+recipient)
     const newTransaction = {
         amount:amount,
         sender:sender,
-        recipient:recipient
+        recipient:recipient,
+        transactionHash:hash
     }
-    this.pendingTransactions.push(newTransaction)
+    return newTransaction
+}
+Blockchain.prototype.addTransactionToPendingTransactions = function(transaction){
+    this.pendingTransactions.push(transaction)
     return this.chain.length
 }
 Blockchain.prototype.hashBlock = function(previousBlockHash, currentBlockData,nonce){
