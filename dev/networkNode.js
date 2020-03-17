@@ -56,25 +56,25 @@ app.post("/transaction/broadcast", (req, res) => {
 
 app.post("/receive-new-block", (req, res) => {
   const newBlock = req.body.newBlock;
-  console.log(newBlock)
+  console.log(newBlock);
   const lastBlock = currency.getLastBlock();
   const correctHash = lastBlock.hash === newBlock.previousBlockHash;
   const correctIndex = lastBlock.index + 1 == newBlock.index;
-  console.log(lastBlock.hash +" -" +newBlock.previousBlockHash)
-  console.log(lastBlock.index+1)
-  console.log(newBlock.index)
+  console.log(lastBlock.hash + " -" + newBlock.previousBlockHash);
+  console.log(lastBlock.index + 1);
+  console.log(newBlock.index);
   if (correctHash && correctIndex) {
     //accept
     currency.chain.push(newBlock);
     currency.pendingTransactions = [];
-    console.log("Block Accepted")
+    console.log("Block Accepted");
     return res.json({
       message: "New Block received and accepeted",
       newBlock: newBlock
     });
   } else {
     //reject
-    console.log("Block Rejected")
+    console.log("Block Rejected");
     return res.json({ message: "New Block Rejected", newBlock: newBlock });
   }
 });
@@ -168,7 +168,6 @@ app.post("/register-and-broadcast-node", (req, res) => {
     console.log(error);
   }
 });
-
 //Register Node
 app.post("/register-node", (req, res) => {
   try {
@@ -207,6 +206,58 @@ app.post("/register-nodes-bulk", (req, res) => {
   }
 });
 
+app.get("/consensus", (req, res) => {
+  //Longest Chain Method
+  const requestPromises = [];
+  //Fetchiing All Blockchain Data
+  currency.networkNodes.forEach(nodeUrl => {
+    const requestOptions = {
+      uri: nodeUrl + "/blockchain",
+      method: "GET",
+      json: true
+    };
+    requestPromises.push(rp(requestOptions));
+  });
+  //Checking if there is a longer chain in the network
+  Promise.all(requestPromises).then(blockchains => {
+    const curretChainLength = currency.chain.length;
+    let maxChainLength = curretChainLength;
+    let longestChain = null;
+    let newPendingTransactions = null;
+    blockchains.forEach(blockchain => {
+      if (blockchain.chain.length > maxChainLength) {
+        maxChainLength = blockchain.chain.length;
+        longestChain = blockchain.chain;
+        newPendingTransactions = blockchain.pendingTransactions;
+      }
+    });
+    if(!longestChain || (longestChain && !currency.chainIsValid(longestChain))){
+      res.json({
+        message:"Blockchain was not replaced",
+        chain: currency.chain
+      })
+    }
+    else if (longestChain && currency.chainIsValid(longestChain) ){
+      currency.chain = longestChain
+      currency.pendingTransactions = newPendingTransactions
+      res.json({
+        message:"Blockchain was replaced with a longer one",
+        chain:currency.chain
+      })
+    }
+  });
+});
+
+app.get('/block/:blockhash',(req,res)=>{
+  const block = currency.getBlock(req.params.blockhash)
+  res.json({block:block})
+})
+app.get('/transaction/:transactionId',(req,res)=>{
+
+})
+app.get('/address/:address',(req,res)=>{
+
+})
 app.listen(port, () => {
   console.log(`Listening on port ${port}`);
 });
