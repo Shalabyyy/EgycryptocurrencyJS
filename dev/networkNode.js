@@ -3,6 +3,7 @@ const app = express();
 const bodyParser = require("body-parser");
 const BlockChain = require("./blockchain");
 const rp = require("request-promise");
+const joi = require('joi')
 const currency = new BlockChain();
 
 const port = process.argv[2];
@@ -22,21 +23,46 @@ app.get("/blockchain", (req, res) => {
 //Do a transaction
 app.post("/transaction", (req, res) => {
   const newTransaction = req.body;
+  const data = req.body;
+  const schema =joi.object().keys({
+    sender: joi.string().required(), //change to 2 or 64 later
+    recipient: joi.string().required(), //change to 64 later
+    amount: joi.number().min(0).required(),
+    transactionHash: joi.allow()
+  })
+  const valid = joi.validate(data,schema)
+  if(valid.error!==null){
+    console.log(valid.error)
+    return res.json({error:`Invalid  ${valid.error}`})
+  }
+  //Validated Data from here
   const message = currency.addTransactionToPendingTransactions(newTransaction);
   return res.json({
     message: `The transaction will be added to block ${message}`
   });
 });
 app.post("/transaction/broadcast", (req, res) => {
+  //Validate Request Body 
+  const data = req.body;
+  const schema =joi.object().keys({
+    sender: joi.string().required(), //change to 2 or 64 later
+    recipient: joi.string().required(), //change to 64 later
+    amount: joi.number().min(0).required()
+  })
+  const valid = joi.validate(data,schema)
+  if(valid.error!==null){
+    console.log(valid.error)
+    return res.json({error:`Invalid  ${valid.error}`})
+  }
+
+  //Starting Here The Inputs are Valid
   const newTransaction = currency.createNewTransaction(
     req.body.sender,
     req.body.recipient,
     req.body.amount
   );
   //Add to my own Array
-
   currency.addTransactionToPendingTransactions(newTransaction);
-
   //Broadcast to the rest of the Nodes
   const requestPromises = [];
   currency.networkNodes.forEach(networkNodeUrl => {
@@ -53,16 +79,29 @@ app.post("/transaction/broadcast", (req, res) => {
     res.json({ message: "The Broadcast was successfull" });
   });
 });
-
 app.post("/receive-new-block", (req, res) => {
   const newBlock = req.body.newBlock;
-  console.log(newBlock);
+  const schema = joi.object().keys({
+      index: joi.number().integer().required(),
+      timestamp: joi.number().integer().required(),
+      transactions: joi.array().required(),
+      nonce: joi.number().integer().required(),
+      hash: joi.string().length(64).required(),
+      previousBlockHash: joi.string().required(),
+      merkleTreeRoot: joi.string().allow()
+  })
+  const validation = joi.validate(newBlock,schema)
+  if(validation.error !== null){
+    console.log(validation.error)
+    return res.json({error:`invalid Input ${validation.error}`})
+  }
+ // console.log(newBlock);
   const lastBlock = currency.getLastBlock();
   const correctHash = lastBlock.hash === newBlock.previousBlockHash;
   const correctIndex = lastBlock.index + 1 == newBlock.index;
-  console.log(lastBlock.hash + " -" + newBlock.previousBlockHash);
-  console.log(lastBlock.index + 1);
-  console.log(newBlock.index);
+  //console.log(lastBlock.hash + " -" + newBlock.previousBlockHash);
+  //console.log(lastBlock.index + 1);
+  //console.log(newBlock.index);
   if (correctHash && correctIndex) {
     //accept
     currency.chain.push(newBlock);
@@ -130,6 +169,15 @@ app.get("/mine", (req, res) => {
 //Add a node to the network an broadcast
 app.post("/register-and-broadcast-node", (req, res) => {
   try {
+    const data = req.body
+    const schema = joi.object().keys({
+      newNodeUrl:joi.string().required()
+    })
+    const valid = joi.validate(data,schema)
+    if(valid.error!==null){
+      console.log(valid.error)
+      return res.json({error:`Invalid Data ${valid.error}`})
+    }
     const nodeUrl = req.body.newNodeUrl;
     //Check if it is not in the network
     if (currency.networkNodes.indexOf(nodeUrl) == -1)
@@ -171,6 +219,16 @@ app.post("/register-and-broadcast-node", (req, res) => {
 //Register Node
 app.post("/register-node", (req, res) => {
   try {
+    const data = req.body
+    const schema = joi.object().keys({
+      newNodeUrl:joi.string().required()
+    })
+    const valid = joi.validate(data,schema)
+    if(valid.error!==null){
+      console.log(valid.error)
+      return res.json({error:`Invalid Data ${valid.error}`})
+    }
+    //Valid from here
     const newNodeUrl = req.body.newNodeUrl;
     //Make Sure that the nodes is not me and It is not already in my array
     const notAlreadyThere = currency.networkNodes.indexOf(newNodeUrl) == -1;
@@ -187,6 +245,16 @@ app.post("/register-node", (req, res) => {
 });
 app.post("/register-nodes-bulk", (req, res) => {
   try {
+    const data = req.body
+    const schema = joi.object().keys({
+      allNetworkNodes:joi.array().required()
+    })
+    const valid = joi.validate(data,schema)
+    if(valid.error!==null){
+      console.log(valid.error)
+      return res.json({error:`Invalid Data ${valid.error}`})
+    }
+    //Valid from here
     const allNetworkNodes = req.body.allNetworkNodes;
     allNetworkNodes.forEach(networkNodeUrl => {
       if (

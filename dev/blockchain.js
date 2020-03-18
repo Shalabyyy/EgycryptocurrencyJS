@@ -1,11 +1,13 @@
 const SHA256 = require("sha256");
+const NodeRSA = require("node-rsa");
 const currentNodeUrl = process.argv[3];
+const key = new NodeRSA({ b: 256 });
 function Blockchain() {
   this.currentNodeUrl = currentNodeUrl;
   this.networkNodes = [];
   this.chain = [];
   this.pendingTransactions = []; //Transaction Pool
-  this.createNewBlock(100, 0, 0);
+  this.createNewBlock(100, "0", "0");
 }
 Blockchain.prototype.createNewBlock = function(nonce, previousBlockHash, hash) {
   const newBlock = {
@@ -100,7 +102,6 @@ Blockchain.prototype.chainIsValid = function(blockchain) {
   }
   return validChain;
 };
-
 Blockchain.prototype.getBlock = function(blockHash) {
   let resultBlock = null;
   this.chain.forEach(block => {
@@ -108,7 +109,6 @@ Blockchain.prototype.getBlock = function(blockHash) {
   });
   return resultBlock;
 };
-
 Blockchain.prototype.getTransaction = function(transactionId) {
   let resultTransaction = null;
   this.chain.forEach(block => {
@@ -135,10 +135,15 @@ Blockchain.prototype.getAddressdata = function(address) {
       }
     });
   });
-  const queryData ={
-    transactions:transactionsMadeByAddress,
-    balance:balance
-  }
+  const queryData = {
+    transactions: transactionsMadeByAddress,
+    balance: balance
+  };
   return queryData;
 };
+Blockchain.prototype.getNetworkNodes = function() {
+  const allNodes = this.networkNodes;
+  return allNodes.push(this.currentNodeUrl);
+};
+
 module.exports = Blockchain;
