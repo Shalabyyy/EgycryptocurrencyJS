@@ -4,6 +4,7 @@ const bodyParser = require("body-parser");
 const BlockChain = require("./blockchain");
 const rp = require("request-promise");
 const joi = require("joi");
+const SHA256 = require("sha256");
 const currency = new BlockChain();
 
 const port = process.argv[2];
@@ -35,13 +36,14 @@ app.post("/transaction", (req, res) => {
   const newTransaction = req.body;
   const data = req.body;
   const schema = joi.object().keys({
-    sender: joi.string().required(), //change to 2 or 64 later
+    sender: joi.allow(), //change to 2 or 64 later
     recipient: joi.string().required(), //change to 64 later
     amount: joi
       .number()
       .min(0)
       .required(),
-    transactionHash: joi.allow()
+    transactionHash: joi.allow(),
+    validationsNeeded: joi.allow()
   });
   const valid = joi.validate(data, schema);
   if (valid.error !== null) {
@@ -49,7 +51,12 @@ app.post("/transaction", (req, res) => {
     return res.json({ error: `Invalid  ${valid.error}` });
   }
   //Validated Data from here
-  const message = currency.addTransactionToPendingTransactions(newTransaction);
+  let message = "";
+  if (req.body.sender == "00") {
+    currency.addTransactionToValidTransactions(newTransaction);
+  } else {
+    message = currency.addTransactionToPendingTransactions(newTransaction);
+  }
   return res.json({
     message: `The transaction will be added to block ${message}`
   });
@@ -73,8 +80,7 @@ app.post("/transaction/broadcast", (req, res) => {
 
   //Starting Here The Inputs are Valid
   const newTransaction = currency.createNewTransaction(
-    // currency.publicAdress,
-    req.body.sender,
+    currency.publicAddress,
     req.body.recipient,
     req.body.amount
   );
@@ -96,7 +102,7 @@ app.post("/transaction/broadcast", (req, res) => {
     res.json({ message: "The Broadcast was successfull" });
   });
 });
-app.post("/award-miner", (req, res) => {
+app.post("/deposit", (req, res) => {
   //Validate Request Body
   const data = req.body;
   const schema = joi.object().keys({
@@ -106,6 +112,50 @@ app.post("/award-miner", (req, res) => {
       .number()
       .min(0)
       .required()
+  });
+  const valid = joi.validate(data, schema);
+  if (valid.error !== null) {
+    console.log(valid.error);
+    return res.json({ error: `Invalid  ${valid.error}` });
+  }
+
+  //Starting Here The Inputs are Valid
+  const newTransaction = currency.createNewTransaction(
+    "00",
+    req.body.recipient,
+    req.body.amount
+  );
+  //Add to my own Array, Later to have it's pwn validation
+  currency.addTransactionToValidTransactions(newTransaction);
+  //Broadcast to the rest of the Nodes
+  const requestPromises = [];
+  currency.networkNodes.forEach(networkNodeUrl => {
+    console.log("Register Transaction at:" + networkNodeUrl);
+    const requestOptions = {
+      uri: networkNodeUrl + "/transaction",
+      method: "POST",
+      body: newTransaction,
+      json: true
+    };
+    requestPromises.push(rp(requestOptions));
+  });
+  Promise.all(requestPromises).then(data => {
+    res.json({
+      message: "Successfult Deposited and Broadcast was successfull"
+    });
+  });
+});
+app.post("/award-miner", (req, res) => {
+  //Validate Request Body
+  const data = req.body;
+  const schema = joi.object().keys({
+    sender: joi.allow(), //change to 2 or 64 later
+    recipient: joi.string().required(), //change to 64 later
+    amount: joi
+      .number()
+      .min(0)
+      .required(),
+    validationsNeeded: joi.allow()
   });
   const valid = joi.validate(data, schema);
   if (valid.error !== null) {
@@ -189,8 +239,84 @@ app.post("/receive-new-block", (req, res) => {
   }
 });
 //Transaction Validation
+app.post("/set-valid", (req, res) => {
+  console.log("Hi There");
+  const request = req.body.transaction;
+  currency.pendingTransactions.forEach(transaction => {
+    if (request.transactionHash == transaction.transactionHash) {
+      const index = currency.pendingTransactions.indexOf(transaction);
+      console.log(index);
+      const newTransaction = currency.pendingTransactions[index];
+      currency.pendingTransactions.splice(index, 1);
+      currency.validatedTransactions.push(newTransaction);
+      return res.json({message:"Successsfuly updated Transaction Array"})
+    }
+  });
+});
+
 app.post("/validate/transaction", (req, res) => {
-  const { amount, sender, recipient, transactionHash } = req.body;
+  const {
+    amount,
+    sender,
+    recipient,
+    transactionHash,
+    validatedTransactions
+  } = req.body;
+  // console.log(`amount added will be ${amount}`);
+  // const index = currency.pendingTransactions.indexOf(req.body);
+  const index = 1;
+  let valid = true;
+  if (index == -1) {
+    valid = false;
+    return res.json({ error: "The Transaction does not exist" });
+  }
+  //2- Checking Origin and Destination
+  if (currency.publicAddress == sender) {
+    valid = false;
+    return res.json({ error: "You can not Validate Your Own Transaction" }); //Later to add the recipient as well
+  }
+  //3- Checking Balance of The Sender in Blockchain and Validated Transactions
+  let balance = currency.getAddressdata(sender).balance;
+  currency.validatedTransactions.forEach(transaction => {
+    if (transaction.sender == sender) balance = balance - transaction.amount;
+    if (transaction.recipient == sender) balance = balance + transaction.amount;
+  });
+  if (balance < amount) {
+    valid = false;
+    return res.json({
+      error: `Insuffcient Funds, You have ${balance}, you want to send ${amount}`
+    });
+  }
+  //4- Check Hash
+  const hashTest = SHA256(sender + amount.toString() + recipient);
+  if (hashTest != transactionHash) {
+    valid = false;
+    return res.json({ error: "The Transaction has been tampered with" });
+  }
+
+  //5- Return Valid Data, Updated Validated and Pending Transactions !!!! ASSUME ONLY 1 VALIDATION IS NEEDED
+  if (valid) {
+    console.log("Transaction Is supposed to be validated");
+    currency.pendingTransactions.splice(index, 1); //Later To Broadcast the transaction
+    console.log(currency.pendingTransactions);
+    const requestPromises = [];
+    currency.networkNodes.forEach(nodeUrl => {
+      console.log(`Checking at node ${nodeUrl}`)
+      const requestOptions = {
+        uri: nodeUrl + "/set-valid",
+        method: "POST",
+        body: { transaction: req.body },
+        json: true
+      };
+      requestPromises.push(rp(requestOptions));
+    });
+    console.log("VOILA")
+    Promise.all(requestPromises)
+      .then(data => {
+        return res.json({ message: "The transaction has been validated" });
+      })
+      .catch(err => console.log(err));
+  }
 });
 
 //Mine block
@@ -229,7 +355,7 @@ app.get("/mine", (req, res) => {
         body: {
           amount: 12.5,
           sender: "00",
-          recipient: currency.currentNodeUrl
+          recipient: currency.publicAddress
         },
         json: true
       };
@@ -273,14 +399,17 @@ app.post("/register-and-broadcast-node", (req, res) => {
       rp(requestOptions)
         .then(response => {
           nodeAddress = response.publicAddress;
+          if (nodeAddress == "-1") console.log("Bollocks");
           if (
             nodeAddress != "-1" &&
-            currency.networkAddresses.indexOf(response.publicAddress) == -1
+            currency.networkAddresses.indexOf(response.publicAddress) == -1 &&
+            currency.publicAddress != nodeAddress
           ) {
             console.log(nodeAddress);
             currency.networkAddresses.push(response.publicAddress);
+          } else {
+            return res.json({ error: "Address Already Exists" });
           }
-          if (nodeAddress == "-1") console.log("Bollocks");
         })
         .then(cnt => {
           const regNodesPromises = []; //to make sure all requests send back replies
@@ -321,6 +450,8 @@ app.post("/register-and-broadcast-node", (req, res) => {
             })
             .catch(err => console.log(err));
         });
+    } else {
+      return res.json({ error: "The Node Already Exists" });
     }
 
     //Broadcast new Node to all Nodes in the Network by calling register-node
@@ -328,7 +459,7 @@ app.post("/register-and-broadcast-node", (req, res) => {
     console.log(error);
   }
 });
-//Register Node
+//Register a Single Node
 app.post("/register-node", (req, res) => {
   try {
     const data = req.body;
@@ -361,6 +492,7 @@ app.post("/register-node", (req, res) => {
     console.log(error);
   }
 });
+//Register an Array of Nodes
 app.post("/register-nodes-bulk", (req, res) => {
   try {
     const data = req.body;

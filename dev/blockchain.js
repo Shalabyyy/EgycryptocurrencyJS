@@ -41,12 +41,17 @@ Blockchain.prototype.createNewTransaction = function(
   recipient,
   amount
 ) {
+  let validationsNeeded = 0
+  if(sender != "00"){
+    validationsNeeded = 1;
+  }
   const hash = SHA256(sender + amount.toString() + recipient);
   const newTransaction = {
     amount: amount,
     sender: sender,
     recipient: recipient,
-    transactionHash: hash
+    transactionHash: hash,
+    validationsNeeded: validationsNeeded
   };
   return newTransaction;
 };
@@ -56,6 +61,9 @@ Blockchain.prototype.addTransactionToPendingTransactions = function(
   this.pendingTransactions.push(transaction);
   return this.chain.length;
 };
+Blockchain.prototype.addTransactionToValidTransactions = function(transaction){
+  this.validatedTransactions.push(transaction);
+}
 Blockchain.prototype.hashBlock = function(
   previousBlockHash,
   currentBlockData,
