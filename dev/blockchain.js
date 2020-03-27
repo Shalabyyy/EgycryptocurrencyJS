@@ -1,13 +1,23 @@
 const SHA256 = require("sha256");
-const NodeRSA = require("node-rsa");
+const crypto =  require('crypto');
+const buffer = require('buffer');
 const currentNodeUrl = process.argv[3];
-const key = new NodeRSA({ b: 256 });
+
 function Blockchain() {
   this.currentNodeUrl = currentNodeUrl;
   this.networkNodes = [];
   this.chain = [];
   this.pendingTransactions = []; //Transaction Pool
+  this.validatedTransactions = [];
+  this.publicKey = null;
+  this.privateKey = null;
+  this.publicAddress = SHA256(SHA256(this.currentNodeUrl));
+  this.networkAddresses = [];
+  this.balance = 10.0;
+  //Execute Functions
   this.createNewBlock(100, "0", "0");
+  this.generateKeys();
+  
 }
 Blockchain.prototype.createNewBlock = function(nonce, previousBlockHash, hash) {
   const newBlock = {
@@ -141,9 +151,51 @@ Blockchain.prototype.getAddressdata = function(address) {
   };
   return queryData;
 };
-Blockchain.prototype.getNetworkNodes = function() {
-  const allNodes = this.networkNodes;
-  return allNodes.push(this.currentNodeUrl);
-};
+Blockchain.prototype.validateTransaction = function(transaction){
+  const {amount,sender,recipient,transactionHash} = transaction
+  if(amount != undefined && sender != undefined && recipient != undefined && transactionHash != undefined){
+    console.log("Undefined Transaction")
+    return false;
+  }
+  if(sender === this.publicAdress){
+    console.log("You can't validate your own transaction");
+    return false;
+  }
+  const senderNode = null;
+  const recipientNode = null;
+  this.networkNodes.forEach(node =>{
+    
+  })
+}
+Blockchain.prototype.generateKeys =   function (){
+   crypto.generateKeyPair('rsa', {
+    modulusLength: 4096,
+    publicKeyEncoding: {
+      type: 'spki',
+      format: 'pem'
+    },
+    privateKeyEncoding: {
+      type: 'pkcs8',
+      format: 'pem',
+      cipher: 'aes-256-cbc',
+      passphrase: 'top secret'
+    }
+  }, (err, publicKey, privateKey) => {
+   this.publicKey = publicKey
+   this.privateKey = privateKey
+   //console.log(this.publicKey)
+  });
+}
+Blockchain.prototype.testEncryption = function (data){
+  const bufferedData = new Buffer(data)
+  console.log(this.privateKey)
+  const step1 = crypto.privateEncrypt(this.privateKey,bufferedData)
+  console.log(step1)
+  console.log("Encrypted with private key box")
+  console.log()
+  const step2 = crypto.publicDecrypt(this.publicKey,step1)
+  console.log(step2)
+  console.log("Decryption complete")
+}
 
 module.exports = Blockchain;
