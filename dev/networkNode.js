@@ -84,6 +84,10 @@ app.post("/transaction/broadcast", (req, res) => {
     req.body.recipient,
     req.body.amount
   );
+  if(newTransaction === null){
+    console.log("Null transactions")
+    return res.json({error:"Insuffceient Funds"})
+  }
   //Add to my own Array
   currency.addTransactionToPendingTransactions(newTransaction);
   //Broadcast to the rest of the Nodes
@@ -141,7 +145,7 @@ app.post("/deposit", (req, res) => {
   });
   Promise.all(requestPromises).then(data => {
     res.json({
-      message: "Successfult Deposited and Broadcast was successfull"
+      message: "Successfuly Deposited and Broadcast was successfull"
     });
   });
 });
@@ -245,13 +249,17 @@ app.post("/set-valid", (req, res) => {
   currency.pendingTransactions.forEach(transaction => {
     if (request.transactionHash == transaction.transactionHash) {
       const index = currency.pendingTransactions.indexOf(transaction);
+      if(index==-1){
+        return res.json({error:"The transaction was validatde"})
+      }
       console.log(index);
       const newTransaction = currency.pendingTransactions[index];
       currency.pendingTransactions.splice(index, 1);
       currency.validatedTransactions.push(newTransaction);
-      return res.json({message:"Successsfuly updated Transaction Array"})
+      
     }
   });
+  return res.json({message:"Successsfuly updated Transaction Array"});
 });
 
 app.post("/validate/transaction", (req, res) => {
@@ -259,9 +267,7 @@ app.post("/validate/transaction", (req, res) => {
     amount,
     sender,
     recipient,
-    transactionHash,
-    validatedTransactions
-  } = req.body;
+    transactionHash } = req.body;
   // console.log(`amount added will be ${amount}`);
   // const index = currency.pendingTransactions.indexOf(req.body);
   const index = 1;
@@ -296,9 +302,7 @@ app.post("/validate/transaction", (req, res) => {
 
   //5- Return Valid Data, Updated Validated and Pending Transactions !!!! ASSUME ONLY 1 VALIDATION IS NEEDED
   if (valid) {
-    console.log("Transaction Is supposed to be validated");
     currency.pendingTransactions.splice(index, 1); //Later To Broadcast the transaction
-    console.log(currency.pendingTransactions);
     const requestPromises = [];
     currency.networkNodes.forEach(nodeUrl => {
       console.log(`Checking at node ${nodeUrl}`)
@@ -536,7 +540,14 @@ app.post("/register-nodes-bulk", (req, res) => {
         }
       }
     });
-    res.json({ message: "Successfuly added All Nodes" });
+    
+
+    const requestOptions = {
+      uri: currency.currentNodeUrl+"/consensus",
+      method:"GET",
+      json:true
+    }
+    rp(requestOptions).then(data=> {return res.json({ message: "Successfuly added All Nodes" }) })
   } catch (error) {
     console.log(error);
   }
@@ -559,11 +570,13 @@ app.get("/consensus", (req, res) => {
     let maxChainLength = curretChainLength;
     let longestChain = null;
     let newPendingTransactions = null;
+    let newValidatedTransactions = null;
     blockchains.forEach(blockchain => {
       if (blockchain.chain.length > maxChainLength) {
         maxChainLength = blockchain.chain.length;
         longestChain = blockchain.chain;
         newPendingTransactions = blockchain.pendingTransactions;
+        newValidatedTransactions = blockchain.validatedTransactions
       }
     });
     if (
@@ -577,6 +590,7 @@ app.get("/consensus", (req, res) => {
     } else if (longestChain && currency.chainIsValid(longestChain)) {
       currency.chain = longestChain;
       currency.pendingTransactions = newPendingTransactions;
+      currency.validatedTransactions = newValidatedTransactions
       res.json({
         message: "Blockchain was replaced with a longer one",
         chain: currency.chain

@@ -1,6 +1,7 @@
 const SHA256 = require("sha256");
 const crypto =  require('crypto');
 const buffer = require('buffer');
+const merkle = require("merkle")
 const currentNodeUrl = process.argv[3];
 
 function Blockchain() {
@@ -20,15 +21,17 @@ function Blockchain() {
   
 }
 Blockchain.prototype.createNewBlock = function(nonce, previousBlockHash, hash) {
+ const merkleTreeRoot= this.getMerkleRoot(this.validatedTransactions)
   const newBlock = {
     index: this.chain.length + 1,
     timestamp: Date.now(),
-    transactions: this.pendingTransactions,
+    transactions: this.validatedTransactions,
     nonce: nonce,
     hash: hash,
-    previousBlockHash: previousBlockHash
+    previousBlockHash: previousBlockHash,
+    merkleTreeRoot: merkleTreeRoot
   };
-  this.pendingTransactions = []; //Clear Transactions
+  this.validatedTransactions = []; //Clear Transactions
   this.chain.push(newBlock);
 
   return newBlock;
@@ -44,6 +47,10 @@ Blockchain.prototype.createNewTransaction = function(
   let validationsNeeded = 0
   if(sender != "00"){
     validationsNeeded = 1;
+  }
+  else if(amount>this.getAddressdata(this.publicAddress).balance && sender!="00"){
+    console.log("insuffcient funds")
+    return null;
   }
   const hash = SHA256(sender + amount.toString() + recipient);
   const newTransaction = {
@@ -107,6 +114,9 @@ Blockchain.prototype.chainIsValid = function(blockchain) {
     if (currentBlock.previousBlockHash !== previousBlock.hash) {
       validChain = false;
     }
+    if(currentBlock.merkleTreeRoot != this.getMerkleRoot(currentBlock.transactions)){
+      validChain = false;
+    }
   }
   const genisisBlock = blockchain[0];
   if (
@@ -152,6 +162,10 @@ Blockchain.prototype.getAddressdata = function(address) {
         transactionsMadeByAddress.push(transaction);
       }
     });
+  });
+  this.validatedTransactions.forEach(transaction => {
+    if (transaction.sender == this.publicAddress) balance = balance - transaction.amount;
+    if (transaction.recipient == this.publicAddress) balance = balance + transaction.amount;
   });
   const queryData = {
     transactions: transactionsMadeByAddress,
@@ -205,5 +219,16 @@ Blockchain.prototype.testEncryption = function (data){
   console.log(step2)
   console.log("Decryption complete")
 }
-
+Blockchain.prototype.getMerkleRoot = function(transactions){
+  if(transactions.length==0){
+    console.log("No Transactions")
+    return;
+  }
+  var use_uppercase = false;
+  merkle("sha256",use_uppercase).async(transactions,function(err,tree){
+   console.log(`Computer Tree Root ${tree.root()}`)
+   return tree.root();
+  })
+  
+}
 module.exports = Blockchain;
