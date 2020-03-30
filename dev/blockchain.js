@@ -2,8 +2,16 @@ const SHA256 = require("sha256");
 const crypto =  require('crypto');
 const buffer = require('buffer');
 const merkle = require("merkle")
-const currentNodeUrl = process.argv[3];
+const currentNodeUrl = getUrl();
 
+function getUrl(){
+  if (process.env.NODE_ENV === "production"){
+    return "https://egycryptocurrency-node-1.herokuapp.com"
+  }
+  else{
+    return process.argv[3];
+  }
+}
 function Blockchain() {
   this.currentNodeUrl = currentNodeUrl;
   this.networkNodes = [];
