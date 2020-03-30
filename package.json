@@ -5,12 +5,14 @@
   "main": "dev/networkNode.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "start":"node dev/networkNode.js 3000 http://localhost:3001",
     "node_1": "nodemon networkNode.js 3001 http://localhost:3001",
     "node_2": "nodemon networkNode.js 3002 http://localhost:3002",
     "node_3": "nodemon networkNode.js 3003 http://localhost:3003",
     "node_4": "nodemon networkNode.js 3004 http://localhost:3004",
     "node_5": "nodemon networkNode.js 3005 http://localhost:3005",
-    "dapp": "concurrently \"npm run node_1\" \"npm run node_2\" \"npm run node_3\" \"npm run node_4\""
+    "dapp": "concurrently \"npm run node_1\" \"npm run node_2\" \"npm run node_3\" \"npm run node_4\"",
+    "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false npm install --prefix client && npm run build --prefix client"
   },
   "author": "",
   "license": "ISC",

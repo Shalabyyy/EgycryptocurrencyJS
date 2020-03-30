@@ -7,7 +7,7 @@ const joi = require("joi");
 const SHA256 = require("sha256");
 const currency = new BlockChain();
 
-const port = process.argv[2];
+const port = process.env.PORT  || process.argv[2];
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
