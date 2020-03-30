@@ -9,13 +9,19 @@
     "node_2": "nodemon networkNode.js 3002 http://localhost:3002",
     "node_3": "nodemon networkNode.js 3003 http://localhost:3003",
     "node_4": "nodemon networkNode.js 3004 http://localhost:3004",
-    "node_5": "nodemon networkNode.js 3005 http://localhost:3005"
+    "node_5": "nodemon networkNode.js 3005 http://localhost:3005",
+    "dapp": "concurrently \"npm run node_1\" \"npm run node_2\" \"npm run node_3\" \"npm run node_4\""
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "body-parser": "^1.19.0",
+    "concurrently": "^5.1.0",
+    "crypto": "^1.0.1",
     "express": "^4.17.1",
+    "joi": "^14.3.1",
+    "merkle": "^0.6.0",
+    "node-rsa": "^1.0.7",
     "nodemon": "^2.0.2",
     "request": "^2.88.2",
     "request-promise": "^4.2.5",
