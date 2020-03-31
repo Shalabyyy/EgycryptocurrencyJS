@@ -7,7 +7,7 @@ const joi = require("joi");
 const SHA256 = require("sha256");
 const currency = new BlockChain();
 
-const port = process.env.PORT  || process.argv[2];
+const port = process.env.PORT || process.argv[2];
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -84,9 +84,9 @@ app.post("/transaction/broadcast", (req, res) => {
     req.body.recipient,
     req.body.amount
   );
-  if(newTransaction === null){
-    console.log("Null transactions")
-    return res.json({error:"Insuffceient Funds"})
+  if (newTransaction === null) {
+    console.log("Null transactions");
+    return res.json({ error: "Insuffceient Funds" });
   }
   //Add to my own Array
   currency.addTransactionToPendingTransactions(newTransaction);
@@ -175,7 +175,7 @@ app.post("/award-miner", (req, res) => {
     req.body.amount
   );
   //Add to my own Array
-  currency.addTransactionToPendingTransactions(newTransaction);
+  currency.addTransactionToValidTransactions(newTransaction);
   //Broadcast to the rest of the Nodes
   const requestPromises = [];
   currency.networkNodes.forEach(networkNodeUrl => {
@@ -230,7 +230,7 @@ app.post("/receive-new-block", (req, res) => {
   if (correctHash && correctIndex) {
     //accept
     currency.chain.push(newBlock);
-    currency.pendingTransactions = [];
+    currency.validatedTransactions = [];
     console.log("Block Accepted");
     return res.json({
       message: "New Block received and accepeted",
@@ -249,17 +249,16 @@ app.post("/set-valid", (req, res) => {
   currency.pendingTransactions.forEach(transaction => {
     if (request.transactionHash == transaction.transactionHash) {
       const index = currency.pendingTransactions.indexOf(transaction);
-      if(index==-1){
-        return res.json({error:"The transaction was validatde"})
+      if (index == -1) {
+        return res.json({ error: "The transaction was validatde" });
       }
       console.log(index);
       const newTransaction = currency.pendingTransactions[index];
       currency.pendingTransactions.splice(index, 1);
       currency.validatedTransactions.push(newTransaction);
-      
     }
   });
-  return res.json({message:"Successsfuly updated Transaction Array"});
+  return res.json({ message: "Successsfuly updated Transaction Array" });
 });
 
 app.post("/validate/transaction", (req, res) => {
@@ -267,10 +266,13 @@ app.post("/validate/transaction", (req, res) => {
     amount,
     sender,
     recipient,
-    transactionHash } = req.body;
+    transactionHash
+  } = currency.pendingTransactions[0];
+  console.log(currency.pendingTransactions[0]);
+  const transactionSubj = currency.pendingTransactions[0];
   // console.log(`amount added will be ${amount}`);
   // const index = currency.pendingTransactions.indexOf(req.body);
-  const index = 1;
+  const index = 0;
   let valid = true;
   if (index == -1) {
     valid = false;
@@ -302,10 +304,12 @@ app.post("/validate/transaction", (req, res) => {
 
   //5- Return Valid Data, Updated Validated and Pending Transactions !!!! ASSUME ONLY 1 VALIDATION IS NEEDED
   if (valid) {
+    console.log("Transaction Is tamam");
     currency.pendingTransactions.splice(index, 1); //Later To Broadcast the transaction
+    currency.validatedTransactions.push(transactionSubj);
     const requestPromises = [];
     currency.networkNodes.forEach(nodeUrl => {
-      console.log(`Checking at node ${nodeUrl}`)
+      console.log(`Checking at node ${nodeUrl}`);
       const requestOptions = {
         uri: nodeUrl + "/set-valid",
         method: "POST",
@@ -314,7 +318,7 @@ app.post("/validate/transaction", (req, res) => {
       };
       requestPromises.push(rp(requestOptions));
     });
-    console.log("VOILA")
+    console.log("VOILA");
     Promise.all(requestPromises)
       .then(data => {
         return res.json({ message: "The transaction has been validated" });
@@ -324,14 +328,14 @@ app.post("/validate/transaction", (req, res) => {
 });
 
 //Mine block
-
 app.get("/mine", (req, res) => {
   //Get Previous hash
+
   const previousBlockhash = currency.getLastBlock().hash;
 
   //get unforged transactions
   const currentBlockData = {
-    transactions: currency.pendingTransactions,
+    transactions: currency.validatedTransactions,
     index: currency.getLastBlock().index + 1
   };
   //execure proof of work and commute hash
@@ -540,14 +544,15 @@ app.post("/register-nodes-bulk", (req, res) => {
         }
       }
     });
-    
 
     const requestOptions = {
-      uri: currency.currentNodeUrl+"/consensus",
-      method:"GET",
-      json:true
-    }
-    rp(requestOptions).then(data=> {return res.json({ message: "Successfuly added All Nodes" }) })
+      uri: currency.currentNodeUrl + "/consensus",
+      method: "GET",
+      json: true
+    };
+    rp(requestOptions).then(data => {
+      return res.json({ message: "Successfuly added All Nodes" });
+    });
   } catch (error) {
     console.log(error);
   }
@@ -556,6 +561,9 @@ app.get("/consensus", (req, res) => {
   //Longest Chain Method
   const requestPromises = [];
   //Fetchiing All Blockchain Data
+  if (currency.networkNodes.length === 0) {
+    return res.json({ error: "You are The only Node in the network" });
+  }
   currency.networkNodes.forEach(nodeUrl => {
     const requestOptions = {
       uri: nodeUrl + "/blockchain",
@@ -576,13 +584,15 @@ app.get("/consensus", (req, res) => {
         maxChainLength = blockchain.chain.length;
         longestChain = blockchain.chain;
         newPendingTransactions = blockchain.pendingTransactions;
-        newValidatedTransactions = blockchain.validatedTransactions
+        newValidatedTransactions = blockchain.validatedTransactions;
+        console.log("Bigger Length");
       }
     });
     if (
       !longestChain ||
       (longestChain && !currency.chainIsValid(longestChain))
     ) {
+      //console.log(currency.chainIsValid(longestChain))
       res.json({
         message: "Blockchain was not replaced",
         chain: currency.chain
@@ -590,7 +600,7 @@ app.get("/consensus", (req, res) => {
     } else if (longestChain && currency.chainIsValid(longestChain)) {
       currency.chain = longestChain;
       currency.pendingTransactions = newPendingTransactions;
-      currency.validatedTransactions = newValidatedTransactions
+      currency.validatedTransactions = newValidatedTransactions;
       res.json({
         message: "Blockchain was replaced with a longer one",
         chain: currency.chain
@@ -616,6 +626,32 @@ app.get("/block-explorer", function(req, res) {
   res.sendFile("./block-explorer/index.html", { root: __dirname });
 });
 
+app.patch("/remove-node", (req, res) => {
+  const nodeToBeDeleted = req.body.nodeToBeDeleted;
+  //For Consistency Purposes We wont remove the address
+  let index = currency.networkNodes.indexOf(nodeToBeDeleted);
+  if (index !== -1) {
+    currency.networkNodes.splice(index, 1);
+    return res.json({ message: "Node Was successfuly deleted" });
+  } else return res.json({ error: "Failed to delete Node" });
+});
+app.delete("/disconnect", (req, res) => {
+  const requestPromises = [];
+  currency.networkNodes.forEach(nodeUrl => {
+    const requestOptions = {
+      uri: nodeUrl + "/remove-node",
+      method: "PATCH",
+      body:{nodeToBeDeleted:currency.currentNodeUrl},
+      json: true
+    };
+    requestPromises.push(rp(requestOptions));
+  });
+  Promise.all(requestPromises).then(data => {
+    currency.flushBlockChain();
+    //Remove Node URI from othe Nodes
+    res.json({ message: "Successfuly cleared the blockchain" });
+  });
+});
 app.listen(port, () => {
   console.log(`Listening on port ${port}`);
 });

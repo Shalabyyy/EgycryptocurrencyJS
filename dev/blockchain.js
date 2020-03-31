@@ -22,7 +22,7 @@ function Blockchain() {
   this.privateKey = null;
   this.publicAddress = SHA256(SHA256(this.currentNodeUrl));
   this.networkAddresses = [];
-  this.balance = 10.0;
+  this.balance = 0.0;
   //Execute Functions
   this.createNewBlock(100, "0", "0");
   this.generateKeys();
@@ -117,12 +117,16 @@ Blockchain.prototype.chainIsValid = function(blockchain) {
       currentBlock.nonce
     );
     if (blockHash.substring(0, 4) !== "0000") {
+      console.log(currentBlock)
+      console.log(`Invalid Block Hash Expected: ${currentBlock.hash}, Recieived: ${blockHash}`)
       validChain = false;
     }
     if (currentBlock.previousBlockHash !== previousBlock.hash) {
+      console.log("Invalid Previous BlockHash")
       validChain = false;
     }
     if(currentBlock.merkleTreeRoot != this.getMerkleRoot(currentBlock.transactions)){
+      console.log("Invalid Merkle Root")
       validChain = false;
     }
   }
@@ -179,6 +183,7 @@ Blockchain.prototype.getAddressdata = function(address) {
     transactions: transactionsMadeByAddress,
     balance: balance
   };
+  this.balance = queryData.balance;
   return queryData;
 };
 Blockchain.prototype.validateTransaction = function(transaction){
@@ -238,5 +243,20 @@ Blockchain.prototype.getMerkleRoot = function(transactions){
    return tree.root();
   })
   
+}
+Blockchain.prototype.flushBlockChain = function(){
+  this.currentNodeUrl = currentNodeUrl;
+  this.networkNodes = [];
+  this.chain = [];
+  this.pendingTransactions = []; //Transaction Pool
+  this.validatedTransactions = [];
+  this.publicKey = null;
+  this.privateKey = null;
+  this.publicAddress = SHA256(SHA256(this.currentNodeUrl));
+  this.networkAddresses = [];
+  this.balance = 0.0;
+  //Execute Functions
+  this.createNewBlock(100, "0", "0");
+  this.generateKeys();
 }
 module.exports = Blockchain;
