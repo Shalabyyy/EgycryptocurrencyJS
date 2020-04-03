@@ -160,8 +160,9 @@ app.post("/send-funds", (req, res) => {
     console.log(validate.error);
     return res.json({ error: `Invalid  ${validate.error}` });
   }
+  const nodeNumber = (Math.floor(Math.random() * Math.floor(4))+1).toString();
   const requestOptions = {
-    uri: "http://localhost:3001/transaction/broadcast",
+    uri: `https://egycryptocurrency-node-${nodeNumber}.herokuapp.com/transaction/broadcast`,
     method: "POST",
     body: {
       sender: publicAddress,
@@ -189,8 +190,9 @@ app.get("/get-balance", (req, res) => {
     publicAddress = decoded.publicAddress;
   });
   console.log(publicAddress)    
+  const nodeNumber = (Math.floor(Math.random() * Math.floor(4))+1).toString();
   const requestOptions = {
-      uri:`http://localhost:3001/address/${publicAddress}`,
+      uri:`https://egycryptocurrency-node-${nodeNumber}.herokuapp.com/address/${publicAddress}`,
       method:"GET",
       json:true
   }
