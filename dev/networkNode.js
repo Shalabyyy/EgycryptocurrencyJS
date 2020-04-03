@@ -70,20 +70,30 @@ app.post("/transaction/broadcast", (req, res) => {
     amount: joi
       .number()
       .min(0)
-      .required()
+      .required(),
+    thirdParty: joi.boolean().allow()
   });
   const valid = joi.validate(data, schema);
   if (valid.error !== null) {
     console.log(valid.error);
     return res.json({ error: `Invalid  ${valid.error}` });
   }
-
   //Starting Here The Inputs are Valid
-  const newTransaction = currency.createNewTransaction(
-    currency.publicAddress,
-    req.body.recipient,
-    req.body.amount
-  );
+  var newTransaction = "";
+  if (req.body.thirdParty) {
+    newTransaction = currency.createNewTransaction(
+      req.body.sender,
+      req.body.recipient,
+      req.body.amount
+    );
+  } else {
+    newTransaction = currency.createNewTransaction(
+      currency.publicAddress,
+      req.body.recipient,
+      req.body.amount
+    );
+  }
+
   if (newTransaction === null) {
     console.log("Null transactions");
     return res.json({ error: "Insuffceient Funds" });
@@ -246,22 +256,44 @@ app.post("/receive-new-block", (req, res) => {
 app.post("/set-valid", (req, res) => {
   console.log("Hi There");
   const request = req.body.transaction;
-  currency.pendingTransactions.forEach(transaction => {
-    if (request.transactionHash == transaction.transactionHash) {
-      const index = currency.pendingTransactions.indexOf(transaction);
-      if (index == -1) {
-        return res.json({ error: "The transaction was validatde" });
+  const valid= req.body.valid
+  if(valid){
+    currency.pendingTransactions.forEach(transaction => {
+      if (request.transactionHash == transaction.transactionHash) {
+        const index = currency.pendingTransactions.indexOf(transaction);
+        if (index == -1) {
+          return res.json({ error: "The transaction was validatde" });
+        }
+        console.log(index);
+        const newTransaction = currency.pendingTransactions[index];
+        currency.pendingTransactions.splice(index, 1);
+        currency.validatedTransactions.push(newTransaction);
       }
-      console.log(index);
-      const newTransaction = currency.pendingTransactions[index];
-      currency.pendingTransactions.splice(index, 1);
-      currency.validatedTransactions.push(newTransaction);
-    }
-  });
+    });
+  }
+  else{
+    console.log("LOLOLOLOLOLO")
+    currency.pendingTransactions.forEach(transaction => {
+      if (request.transactionHash == transaction.transactionHash) {
+        const index = currency.pendingTransactions.indexOf(transaction);
+        if (index == -1) {
+          return res.json({ error: "The transaction was Removed" });
+        }
+        console.log(index);
+        const newTransaction = currency.pendingTransactions[index];
+        currency.pendingTransactions.splice(index, 1);
+        console.log("YOU FXING FRAUD")
+      }
+    });
+  }
+  
   return res.json({ message: "Successsfuly updated Transaction Array" });
 });
 
 app.post("/validate/transaction", (req, res) => {
+  if (currency.pendingTransactions.length == 0) {
+    return res.json({ error: "Nothing to Validate" });
+  }
   const {
     amount,
     sender,
@@ -276,12 +308,13 @@ app.post("/validate/transaction", (req, res) => {
   let valid = true;
   if (index == -1) {
     valid = false;
-    return res.json({ error: "The Transaction does not exist" });
+    return res.json({ error: "TERMINATED:The Transaction does not exist" });
   }
   //2- Checking Origin and Destination
   if (currency.publicAddress == sender) {
+    currency.pendingTransactions.splice(index, 1);
     valid = false;
-    return res.json({ error: "You can not Validate Your Own Transaction" }); //Later to add the recipient as well
+    //Later to add the recipient as well
   }
   //3- Checking Balance of The Sender in Blockchain and Validated Transactions
   let balance = currency.getAddressdata(sender).balance;
@@ -290,16 +323,14 @@ app.post("/validate/transaction", (req, res) => {
     if (transaction.recipient == sender) balance = balance + transaction.amount;
   });
   if (balance < amount) {
+    currency.pendingTransactions.splice(index, 1);
     valid = false;
-    return res.json({
-      error: `Insuffcient Funds, You have ${balance}, you want to send ${amount}`
-    });
   }
   //4- Check Hash
   const hashTest = SHA256(sender + amount.toString() + recipient);
   if (hashTest != transactionHash) {
+    currency.pendingTransactions.splice(index, 1);
     valid = false;
-    return res.json({ error: "The Transaction has been tampered with" });
   }
 
   //5- Return Valid Data, Updated Validated and Pending Transactions !!!! ASSUME ONLY 1 VALIDATION IS NEEDED
@@ -313,7 +344,7 @@ app.post("/validate/transaction", (req, res) => {
       const requestOptions = {
         uri: nodeUrl + "/set-valid",
         method: "POST",
-        body: { transaction: req.body },
+        body: { transaction: transactionSubj, valid: true },
         json: true
       };
       requestPromises.push(rp(requestOptions));
@@ -322,6 +353,24 @@ app.post("/validate/transaction", (req, res) => {
     Promise.all(requestPromises)
       .then(data => {
         return res.json({ message: "The transaction has been validated" });
+      })
+      .catch(err => console.log(err));
+  } else {
+    const requestPromises = [];
+    currency.networkNodes.forEach(nodeUrl => {
+      console.log(`Checking at node ${nodeUrl}`);
+      const requestOptions = {
+        uri: nodeUrl + "/set-valid",
+        method: "POST",
+        body: { transaction: transactionSubj, valid: false },
+        json: true
+      };
+      requestPromises.push(rp(requestOptions));
+    });
+    console.log("VOILA");
+    Promise.all(requestPromises)
+      .then(data => {
+        return res.json({ message: "The transaction has been Terminated" });
       })
       .catch(err => console.log(err));
   }
@@ -626,6 +675,34 @@ app.get("/block-explorer", function(req, res) {
   res.sendFile("./block-explorer/index.html", { root: __dirname });
 });
 
+//Registering new Wallets (OPTIONAL)
+app.post("/add-address", (req, res) => {
+  currency.addPublicAddress(req.body.address);
+  return res.json({
+    message: `Successfuly Added The Address ${req.body.address}`
+  });
+});
+app.post("/add-address-broadcast", (req, res) => {
+  const address = req.body.address;
+  if (currency.networkAddresses.indexOf(address) != -1) {
+    return res.json({ error: "Address Already Exists" });
+  }
+  currency.addPublicAddress(address);
+  const requestPromises = [];
+  currency.networkNodes.forEach(nodeUrl => {
+    const requestOptions = {
+      uri: nodeUrl + "/add-address",
+      method: "POST",
+      body: { address: address },
+      json: true
+    };
+    requestPromises.push(rp(requestOptions));
+  });
+  Promise.all(requestPromises)
+    .then(res.json({ message: "Successfully broadcasted new Address" }))
+    .catch(error => res.json({ error: error }));
+});
+
 app.patch("/remove-node", (req, res) => {
   const nodeToBeDeleted = req.body.nodeToBeDeleted;
   //For Consistency Purposes We wont remove the address
@@ -641,7 +718,7 @@ app.delete("/disconnect", (req, res) => {
     const requestOptions = {
       uri: nodeUrl + "/remove-node",
       method: "PATCH",
-      body:{nodeToBeDeleted:currency.currentNodeUrl},
+      body: { nodeToBeDeleted: currency.currentNodeUrl },
       json: true
     };
     requestPromises.push(rp(requestOptions));

@@ -54,7 +54,7 @@ Blockchain.prototype.createNewTransaction = function(
   if (sender != "00") {
     validationsNeeded = 1;
   } else if (
-    amount > this.getAddressdata(this.publicAddress).balance &&
+    amount > this.getAddressdata(this.publicAddress).balance1 &&
     sender != "00"
   ) {
     console.log("insuffcient funds");
@@ -166,31 +166,33 @@ Blockchain.prototype.getTransaction = function(transactionId) {
 };
 Blockchain.prototype.getAddressdata = function(address) {
   let transactionsMadeByAddress = [];
-  let balance = 0;
+  var balance1 = 0;
   this.chain.forEach(block => {
     block.transactions.forEach(transaction => {
       if (transaction.sender == address) {
-        balance = balance - transaction.amount;
+        balance1 = balance1 - transaction.amount;
         transactionsMadeByAddress.push(transaction);
       }
 
       if (transaction.recipient == address) {
-        balance = balance + transaction.amount;
+        balance1 = balance1 + transaction.amount;
         transactionsMadeByAddress.push(transaction);
       }
     });
   });
   this.validatedTransactions.forEach(transaction => {
-    if (transaction.sender == this.publicAddress)
-      balance = balance - transaction.amount;
-    if (transaction.recipient == this.publicAddress)
-      balance = balance + transaction.amount;
+    console.log(transaction.sender)
+    if (transaction.sender == address)
+      balance1 = balance1 - transaction.amount;
+    if (transaction.recipient == address)
+      balance1 = balance1 + transaction.amount;
   });
   const queryData = {
     transactions: transactionsMadeByAddress,
-    balance: balance
+    balance: balance1
   };
   this.balance = queryData.balance;
+  console.log(balance1)
   return queryData;
 };
 Blockchain.prototype.validateTransaction = function(transaction) {
@@ -267,9 +269,12 @@ Blockchain.prototype.flushBlockChain = function() {
   this.privateKey = null;
   this.publicAddress = SHA256(SHA256(this.currentNodeUrl));
   this.networkAddresses = [];
-  this.balance = 0.0;
+  this.balance1 = 0.0;
   //Execute Functions
   this.createNewBlock(100, "0", "0");
   this.generateKeys();
 };
+Blockchain.prototype.addPublicAddress = function(newAddress){
+  this.networkAddresses.push(newAddress)
+}
 module.exports = Blockchain;
