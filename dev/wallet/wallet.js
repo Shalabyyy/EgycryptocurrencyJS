@@ -6,10 +6,11 @@ const joi = require("joi");
 const SHA256 = require("sha256");
 const rp = require("request-promise");
 const jwt = require("jsonwebtoken");
-
+const cors = require('cors')
 const Wallet = require("./WalletAddress");
 const keys = require("../config/keys");
 
+app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
@@ -74,17 +75,6 @@ app.post("/register", async (req, res) => {
         }
       })
     )
-    .then(data => {
-      const requestOptions = {
-        uri: "http://localhost:3001/add-address-broadcast",
-        method: "POST",
-        body: { address: publicAddress },
-        json: true
-      };
-      rp(requestOptions)
-        .then(data => console.log(data))
-        .catch(error => console.log(error));
-    })
     .catch(error => res.json({ error: error.message }));
 });
 app.post("/login", async (req, res) => {
