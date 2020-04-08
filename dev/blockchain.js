@@ -1,9 +1,16 @@
 const SHA256 = require("sha256");
-const crypto =  require('crypto');
-const buffer = require('buffer');
-const merkle = require("merkle")
-const currentNodeUrl = process.argv[3];
+const crypto = require("crypto");
+const buffer = require("buffer");
+const merkle = require("merkle");
+const currentNodeUrl = getUrl();
 
+function getUrl() {
+  if (process.env.NODE_ENV === "production") {
+    return "https://egycryptocurrency-node-4.herokuapp.com";
+  } else {
+    return process.argv[3];
+  }
+}
 function Blockchain() {
   this.currentNodeUrl = currentNodeUrl;
   this.networkNodes = [];
@@ -14,14 +21,13 @@ function Blockchain() {
   this.privateKey = null;
   this.publicAddress = SHA256(SHA256(this.currentNodeUrl));
   this.networkAddresses = [];
-  this.balance = 10.0;
+  this.balance = 0.0;
   //Execute Functions
   this.createNewBlock(100, "0", "0");
   this.generateKeys();
-  
 }
 Blockchain.prototype.createNewBlock = function(nonce, previousBlockHash, hash) {
- const merkleTreeRoot= this.getMerkleRoot(this.validatedTransactions)
+  const merkleTreeRoot = this.getMerkleRoot(this.validatedTransactions);
   const newBlock = {
     index: this.chain.length + 1,
     timestamp: Date.now(),
@@ -44,12 +50,14 @@ Blockchain.prototype.createNewTransaction = function(
   recipient,
   amount
 ) {
-  let validationsNeeded = 0
-  if(sender != "00"){
+  let validationsNeeded = 0;
+  if (sender != "00") {
     validationsNeeded = 1;
-  }
-  else if(amount>this.getAddressdata(this.publicAddress).balance && sender!="00"){
-    console.log("insuffcient funds")
+  } else if (
+    amount > this.getAddressdata(this.publicAddress).balance1 &&
+    sender != "00"
+  ) {
+    console.log("insuffcient funds");
     return null;
   }
   const hash = SHA256(sender + amount.toString() + recipient);
@@ -68,9 +76,9 @@ Blockchain.prototype.addTransactionToPendingTransactions = function(
   this.pendingTransactions.push(transaction);
   return this.chain.length;
 };
-Blockchain.prototype.addTransactionToValidTransactions = function(transaction){
+Blockchain.prototype.addTransactionToValidTransactions = function(transaction) {
   this.validatedTransactions.push(transaction);
-}
+};
 Blockchain.prototype.hashBlock = function(
   previousBlockHash,
   currentBlockData,
@@ -109,12 +117,21 @@ Blockchain.prototype.chainIsValid = function(blockchain) {
       currentBlock.nonce
     );
     if (blockHash.substring(0, 4) !== "0000") {
+      console.log(currentBlock);
+      console.log(
+        `Invalid Block Hash Expected: ${currentBlock.hash}, Recieived: ${blockHash}`
+      );
       validChain = false;
     }
     if (currentBlock.previousBlockHash !== previousBlock.hash) {
+      console.log("Invalid Previous BlockHash");
       validChain = false;
     }
-    if(currentBlock.merkleTreeRoot != this.getMerkleRoot(currentBlock.transactions)){
+    if (
+      currentBlock.merkleTreeRoot !=
+      this.getMerkleRoot(currentBlock.transactions)
+    ) {
+      console.log("Invalid Merkle Root");
       validChain = false;
     }
   }
@@ -149,86 +166,115 @@ Blockchain.prototype.getTransaction = function(transactionId) {
 };
 Blockchain.prototype.getAddressdata = function(address) {
   let transactionsMadeByAddress = [];
-  let balance = 0;
+  var balance1 = 0;
   this.chain.forEach(block => {
     block.transactions.forEach(transaction => {
       if (transaction.sender == address) {
-        balance = balance - transaction.amount;
+        balance1 = balance1 - transaction.amount;
         transactionsMadeByAddress.push(transaction);
       }
 
       if (transaction.recipient == address) {
-        balance = balance + transaction.amount;
+        balance1 = balance1 + transaction.amount;
         transactionsMadeByAddress.push(transaction);
       }
     });
   });
   this.validatedTransactions.forEach(transaction => {
-    if (transaction.sender == this.publicAddress) balance = balance - transaction.amount;
-    if (transaction.recipient == this.publicAddress) balance = balance + transaction.amount;
+    console.log(transaction.sender)
+    if (transaction.sender == address)
+      balance1 = balance1 - transaction.amount;
+    if (transaction.recipient == address)
+      balance1 = balance1 + transaction.amount;
   });
   const queryData = {
     transactions: transactionsMadeByAddress,
-    balance: balance
+    balance: balance1
   };
+  this.balance = queryData.balance;
+  console.log(balance1)
   return queryData;
 };
-Blockchain.prototype.validateTransaction = function(transaction){
-  const {amount,sender,recipient,transactionHash} = transaction
-  if(amount != undefined && sender != undefined && recipient != undefined && transactionHash != undefined){
-    console.log("Undefined Transaction")
+Blockchain.prototype.validateTransaction = function(transaction) {
+  const { amount, sender, recipient, transactionHash } = transaction;
+  if (
+    amount != undefined &&
+    sender != undefined &&
+    recipient != undefined &&
+    transactionHash != undefined
+  ) {
+    console.log("Undefined Transaction");
     return false;
   }
-  if(sender === this.publicAdress){
+  if (sender === this.publicAdress) {
     console.log("You can't validate your own transaction");
     return false;
   }
   const senderNode = null;
   const recipientNode = null;
-  this.networkNodes.forEach(node =>{
-    
-  })
-}
-Blockchain.prototype.generateKeys =   function (){
-   crypto.generateKeyPair('rsa', {
-    modulusLength: 4096,
-    publicKeyEncoding: {
-      type: 'spki',
-      format: 'pem'
+  this.networkNodes.forEach(node => {});
+};
+Blockchain.prototype.generateKeys = function() {
+  crypto.generateKeyPair(
+    "rsa",
+    {
+      modulusLength: 4096,
+      publicKeyEncoding: {
+        type: "spki",
+        format: "pem"
+      },
+      privateKeyEncoding: {
+        type: "pkcs8",
+        format: "pem",
+        cipher: "aes-256-cbc",
+        passphrase: "top secret"
+      }
     },
-    privateKeyEncoding: {
-      type: 'pkcs8',
-      format: 'pem',
-      cipher: 'aes-256-cbc',
-      passphrase: 'top secret'
+    (err, publicKey, privateKey) => {
+      this.publicKey = publicKey;
+      this.privateKey = privateKey;
+      //console.log(this.publicKey)
     }
-  }, (err, publicKey, privateKey) => {
-   this.publicKey = publicKey
-   this.privateKey = privateKey
-   //console.log(this.publicKey)
-  });
-}
-Blockchain.prototype.testEncryption = function (data){
-  const bufferedData = new Buffer(data)
-  console.log(this.privateKey)
-  const step1 = crypto.privateEncrypt(this.privateKey,bufferedData)
-  console.log(step1)
-  console.log("Encrypted with private key box")
-  console.log()
-  const step2 = crypto.publicDecrypt(this.publicKey,step1)
-  console.log(step2)
-  console.log("Decryption complete")
-}
-Blockchain.prototype.getMerkleRoot = function(transactions){
-  if(transactions.length==0){
-    console.log("No Transactions")
+  );
+};
+Blockchain.prototype.testEncryption = function(data) {
+  const bufferedData = new Buffer(data);
+  console.log(this.privateKey);
+  const step1 = crypto.privateEncrypt(this.privateKey, bufferedData);
+  console.log(step1);
+  console.log("Encrypted with private key box");
+  console.log();
+  const step2 = crypto.publicDecrypt(this.publicKey, step1);
+  console.log(step2);
+  console.log("Decryption complete");
+};
+Blockchain.prototype.getMerkleRoot = function(transactions) {
+  if (transactions.length == 0) {
+    console.log("No Transactions");
     return;
   }
   var use_uppercase = false;
-  merkle("sha256",use_uppercase).async(transactions,function(err,tree){
-   console.log(`Computer Tree Root ${tree.root()}`)
-   return tree.root();
-  })
-  
+  merkle("sha256", use_uppercase).async(transactions, function(err, tree) {
+    console.log(`Computer Tree Root ${tree.root()}`);
+    return tree.root();
+  });
+};
+Blockchain.prototype.flushBlockChain = function() {
+  this.currentNodeUrl = currentNodeUrl;
+  this.networkNodes = [];
+  this.chain = [];
+  this.pendingTransactions = []; //Transaction Pool
+  this.validatedTransactions = [];
+  this.publicKey = null;
+  this.privateKey = null;
+  this.publicAddress = SHA256(SHA256(this.currentNodeUrl));
+  this.networkAddresses = [];
+  this.balance1 = 0.0;
+  //Execute Functions
+  this.createNewBlock(100, "0", "0");
+  this.generateKeys();
+};
+Blockchain.prototype.addPublicAddress = function(newAddress){
+  this.networkAddresses.push(newAddress)
 }
 module.exports = Blockchain;
