@@ -1,14 +1,25 @@
 import React, { Component } from "react";
-import M from "materialize-css";
 import rp from "request-promise";
+import M from "materialize-css";
+import { Redirect } from "react-router-dom";
+
 class Welcome extends Component {
   state = {
     privateAddress: "",
     passwordLogin: "",
     passwordReg1: "",
     passwordReg2: "",
-    jwt: ""
+    account: {},
+    jwt: "",
+    redirect: false,
+    height: 0,
+    width: 0
   };
+  componentDidMount() {
+    const { width, height } = this.getWindowDimension();
+    this.setState({ height: height, width: width });
+    console.log(width, height);
+  }
   handleChange = event => {
     console.log(event.target.value);
     const { name, value } = event.target;
@@ -16,6 +27,17 @@ class Welcome extends Component {
       [name]: value
     });
     //console.log(this.state.username)
+  };
+  getWindowDimension = () => {
+    const width =
+      window.innerWidth ||
+      document.documentElement.clientWidth ||
+      document.body.clientWidth;
+    const height =
+      window.innerHeight ||
+      document.documentElement.clientHeight ||
+      document.body.clientHeight;
+    return { width, height };
   };
   hasLowerCase = str => {
     return str.toUpperCase() !== str;
@@ -42,7 +64,9 @@ class Welcome extends Component {
           console.log(data);
           this.setState({ jwt: data.token });
           let publicAddress = data.account[0].publicAddress;
-          window.alert("SUCCESSFULLY LOGGED IN AS " + publicAddress);
+          // window.alert("SUCCESSFULLY LOGGED IN AS " + publicAddress);
+          this.setState({ account: data.account[0] });
+          this.setState({ redirect: true });
         } else {
           window.alert("WRONG PRIVATE ADDRESS OR PASSWORD");
         }
@@ -97,90 +121,212 @@ class Welcome extends Component {
     }
   };
   render() {
-    return (
-      <div class="container">
-        <h2>Welcome to Egycryptocurrency wallet</h2>
-        <div class="row">
-          <form class="col s12">
+    if (this.state.redirect)
+      return (
+        <Redirect
+          to={{
+            pathname: "/dashboard",
+            state: { jwt: this.state.jwt, account: this.state.account }
+          }}
+        />
+      );
+    else if (this.state.width < 450)
+      return (
+        <div>
+          <div class="container">
+            <h6>Welcome to Egycryptocurrency wallet</h6>
             <div class="row">
-              <h6>Login into you wallet acccount</h6>
-              <div class="input-field col s4">
-                <i class="material-icons prefix">verified_user</i>
-                <input
-                  id="icon_vu"
-                  type="text"
-                  class="validate"
-                  name="privateAddress"
-                  value={this.state.privateAddress}
-                  onChange={this.handleChange}
-                />
-                <label for="icon_vu">Private Address</label>
-              </div>
-              <div class="input-field col s4">
-                <i class="material-icons prefix">lock</i>
-                <input
-                  id="icon_pwd1"
-                  type="password"
-                  class="validate"
-                  name="passwordLogin"
-                  value={this.state.passwordLogin}
-                  onChange={this.handleChange}
-                />
-                <label for="icon_pwd1">Password</label>
-              </div>
-              <div class="input-field col s4">
-                <a class="btn waves-effect waves-light" onClick={this.login}>
-                  Sign In
-                  <i class="material-icons right">send</i>
-                </a>
-              </div>
+              <form class="col s12">
+                <h6>Login into you wallet acccount</h6>
+                <div id="Row1">
+                  <div class="row">
+                    <div class="input-field">
+                      <i class="material-icons prefix">verified_user</i>
+                      <input
+                        id="icon_vu"
+                        type="text"
+                        class="validate"
+                        name="privateAddress"
+                        value={this.state.privateAddress}
+                        onChange={this.handleChange}
+                      />
+                      <label for="icon_vu">Private Address</label>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="input-field">
+                      <i class="material-icons prefix">lock</i>
+                      <input
+                        id="icon_pwd1"
+                        type="password"
+                        class="validate"
+                        name="passwordLogin"
+                        value={this.state.passwordLogin}
+                        onChange={this.handleChange}
+                      />
+                      <label for="icon_pwd1">Password</label>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="input-field">
+                      <a
+                        class="btn waves-effect waves-light"
+                        onClick={this.login}
+                      >
+                        Sign In
+                        <i class="material-icons right">send</i>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <h4>OR</h4>
+                </div>
+                <div class="row">
+                  {" "}
+                  <p>
+                    Create a new Account by entering yout password, You will
+                    recive your private address later
+                  </p>
+                </div>
+                <div class="row">
+                  <div class="input-field">
+                    <i class="material-icons prefix">lock</i>
+                    <input
+                      id="icon_pwd2"
+                      type="password"
+                      class="validate"
+                      name="passwordReg1"
+                      value={this.state.passwordReg1}
+                      onChange={this.handleChange}
+                    />
+                    <label for="icon_pwd2">Password</label>
+                  </div>
+                </div>
+                <div class="row">
+                  {" "}
+                  <div class="input-field">
+                    <i class="material-icons prefix">lock</i>
+                    <input
+                      id="icon_pwd3"
+                      type="password"
+                      class="validate"
+                      name="passwordReg2"
+                      value={this.state.passwordReg2}
+                      onChange={this.handleChange}
+                    />
+                    <label for="icon_pwd3">Re-Enter Password</label>
+                  </div>
+                </div>
+                <div class="row">
+                  {" "}
+                  <div class="input-field">
+                    <a
+                      class="btn waves-effect waves-light"
+                      onClick={this.register}
+                    >
+                      Register
+                      <i class="material-icons right">send</i>
+                    </a>
+                    <h6 id="reg-pass-message" style={{ paddingTop: "10px" }}>
+                      Please enter you password
+                    </h6>
+                  </div>
+                </div>
+              </form>
             </div>
-            <div class="row">
-              <h4>OR</h4>
-            </div>
-            <div class="row">
-              <h6>
-                Create a new Account by entering yout password, You will recive
-                your private address later
-              </h6>
-              <div class="input-field col s4">
-                <i class="material-icons prefix">lock</i>
-                <input
-                  id="icon_pwd2"
-                  type="password"
-                  class="validate"
-                  name="passwordReg1"
-                  value={this.state.passwordReg1}
-                  onChange={this.handleChange}
-                />
-                <label for="icon_pwd2">Password</label>
-              </div>
-              <div class="input-field col s4">
-                <i class="material-icons prefix">lock</i>
-                <input
-                  id="icon_pwd3"
-                  type="password"
-                  class="validate"
-                  name="passwordReg2"
-                  value={this.state.passwordReg2}
-                  onChange={this.handleChange}
-                />
-                <label for="icon_pwd3">Re-Enter Password</label>
-              </div>
-              <div class="input-field col s4">
-                <a class="btn waves-effect waves-light" onClick={this.register}>
-                  Register
-                  <i class="material-icons right">send</i>
-                </a>
-                <h6 id="reg-pass-message" style={{ paddingTop: "10px" }}>
-                  Please enter you password
-                </h6>
-              </div>
-            </div>
-          </form>
+          </div>  
         </div>
-      </div>
-    );
+      );
+    else
+      return (
+        <div class="container">
+          <h2>Welcome to Egycryptocurrency wallet</h2>
+          <div class="row">
+            <form class="col s12">
+              <div class="row">
+                <h6>Login into you wallet acccount</h6>
+                <div class="input-field col s4">
+                  <i class="material-icons prefix">verified_user</i>
+                  <input
+                    id="icon_vu"
+                    type="text"
+                    class="validate"
+                    name="privateAddress"
+                    value={this.state.privateAddress}
+                    onChange={this.handleChange}
+                  />
+                  <label for="icon_vu">Private Address</label>
+                </div>
+                <div class="input-field col s4">
+                  <i class="material-icons prefix">lock</i>
+                  <input
+                    id="icon_pwd1"
+                    type="password"
+                    class="validate"
+                    name="passwordLogin"
+                    value={this.state.passwordLogin}
+                    onChange={this.handleChange}
+                  />
+                  <label for="icon_pwd1">Password</label>
+                </div>
+                <div class="input-field col s4">
+                  <a class="btn waves-effect waves-light" onClick={this.login}>
+                    Sign In
+                    <i class="material-icons right">send</i>
+                  </a>
+                </div>
+              </div>
+              <div class="row">
+                <h4>OR</h4>
+              </div>
+              <div class="row">
+                <h6>
+                  Create a new Account by entering yout password, You will
+                  recive your private address later
+                </h6>
+                <div class="input-field col s4">
+                  <i class="material-icons prefix">lock</i>
+                  <input
+                    id="icon_pwd2"
+                    type="password"
+                    class="validate"
+                    name="passwordReg1"
+                    value={this.state.passwordReg1}
+                    onChange={this.handleChange}
+                  />
+                  <label for="icon_pwd2">Password</label>
+                </div>
+                <div class="input-field col s4">
+                  <i class="material-icons prefix">lock</i>
+                  <input
+                    id="icon_pwd3"
+                    type="password"
+                    class="validate"
+                    name="passwordReg2"
+                    value={this.state.passwordReg2}
+                    onChange={this.handleChange}
+                  />
+                  <label for="icon_pwd3">Re-Enter Password</label>
+                </div>
+                <div class="input-field col s4">
+                  <a
+                    class="btn waves-effect waves-light"
+                    onClick={this.register}
+                  >
+                    Register
+                    <i class="material-icons right">send</i>
+                  </a>
+                  <h6 id="reg-pass-message" style={{ paddingTop: "10px" }}>
+                    Please enter you password
+                  </h6>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      );
   }
 }
 
