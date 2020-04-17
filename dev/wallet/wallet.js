@@ -30,9 +30,6 @@ mongoose.connection
     console.log("Error is: ", error);
   });
 
-app.get("/", (req, res) => {
-  res.json({ message: "Welcome to the wallet app" });
-});
 
 //API METHODS
 app.post("/register", async (req, res) => {
@@ -196,13 +193,13 @@ app.get("/logout", function(req, res) {
   res.status(200).send({ auth: false, token: null });
 });
 
-if (process.env.NODE_ENV === "production") {
-  app.use(express.static("client/build"));
+
+  app.use(express.static("wallet-client/build"));
   app.get("*", (req, res) => {
-    res.sendFile(path.resolve(__dirname, "client", "build", "index.html"));
+    res.sendFile(path.resolve(__dirname, "wallet-client", "build", "index.html"));
   });
   
-}
+
 
 app.listen(port, () => {
   console.log(`Wallet running on port ${port}`);
