@@ -6,6 +6,7 @@ const joi = require("joi");
 const SHA256 = require("sha256");
 const rp = require("request-promise");
 const jwt = require("jsonwebtoken");
+const path = require("path");
 const cors = require('cors')
 const Wallet = require("./WalletAddress");
 const keys = require("../config/keys");
