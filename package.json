@@ -12,7 +12,7 @@
     "node_4": "nodemon networkNode.js 3004 http://localhost:3004",
     "node_5": "nodemon networkNode.js 3005 http://localhost:3005",
     "dapp": "concurrently \"npm run node_1\" \"npm run node_2\" \"npm run node_3\" \"npm run node_4\"",
-    "wallet":"concurrently \"node dev/wallet/wallet.js\" \"npm start --prefix wallet-client\"",
+    "wallet": "concurrently \"node dev/wallet/wallet.js\" \"npm start --prefix wallet-client\"",
     "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false"
   },
   "author": "",
