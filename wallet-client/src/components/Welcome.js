@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import rp from "request-promise";
-import M from "materialize-css";
+import "materialize-css";
 import { Redirect } from "react-router-dom";
 
 class Welcome extends Component {
@@ -62,11 +62,7 @@ class Welcome extends Component {
       .then(data => {
         if (data.error === undefined) {
           console.log(data);
-          this.setState({ jwt: data.token });
-          let publicAddress = data.account[0].publicAddress;
-          // window.alert("SUCCESSFULLY LOGGED IN AS " + publicAddress);
-          this.setState({ account: data.account[0] });
-          this.setState({ redirect: true });
+          this.setState({ jwt: data.token,account: data.account[0],redirect: true });
         } else {
           window.alert("WRONG PRIVATE ADDRESS OR PASSWORD");
         }
