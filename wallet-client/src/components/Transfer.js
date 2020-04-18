@@ -21,7 +21,7 @@ class Transfer extends Component {
     });
     console.log(this.props.location.state);
     const requestOptions = {
-      uri: "http://localhost:4000/get-balance",
+      uri: "https://boxcoin-wallet.herokuapp.com//get-balance",
       method: "GET",
       json: true,
       headers: {
@@ -67,7 +67,7 @@ class Transfer extends Component {
     }
     
     const requestOptions = {
-      uri: "http://localhost:4000/send-funds",
+      uri: "https://boxcoin-wallet.herokuapp.com/send-funds",
       method: "POST",
       json: true,
       headers: {

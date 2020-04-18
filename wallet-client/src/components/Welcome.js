@@ -12,6 +12,7 @@ class Welcome extends Component {
     account: {},
     jwt: "",
     redirect: false,
+    registerComplete:false,
     height: 0,
     width: 0
   };
@@ -50,7 +51,7 @@ class Welcome extends Component {
   };
   login = event => {
     const requestOptions = {
-      uri: "http://localhost:4000/login",
+      uri: "https://boxcoin-wallet.herokuapp.com/login",
       method: "POST",
       json: true,
       body: {
@@ -98,7 +99,7 @@ class Welcome extends Component {
       let privateAddress = "";
       let publicAddress = "";
       const requestOptions = {
-        uri: "http://localhost:4000/register",
+        uri: "https://boxcoin-wallet.herokuapp.com/register",
         method: "POST",
         json: true,
         body: {
@@ -111,7 +112,7 @@ class Welcome extends Component {
           console.log(data);
           privateAddress = data.data.account.privateAddress;
           publicAddress = data.data.account.publicAddress;
-          window.alert(data.data.message + "\n \n" + privateAddress);
+          this.setState({registerComplete:true,account:data.data.account})
         })
         .catch(err => console.log(err));
     }
@@ -123,6 +124,15 @@ class Welcome extends Component {
           to={{
             pathname: "/dashboard",
             state: { jwt: this.state.jwt, account: this.state.account }
+          }}
+        />
+      );
+    if (this.state.registerComplete)
+      return (
+        <Redirect
+          to={{
+            pathname: "/welcome",
+            state: {account: this.state.account}
           }}
         />
       );

@@ -43,6 +43,42 @@ function KeepAlive() {
   }
   
 } 
+function validate() {
+  /*const urls = [
+    "https://egycryptocurrency-node-1.herokuapp.com",
+    "https://egycryptocurrency-node-2.herokuapp.com",
+    "https://egycryptocurrency-node-3.herokuapp.com",
+    "https://egycryptocurrency-node-4.herokuapp.com"
+  ];*/
+  const urls = [
+    "http://localhost:3001",
+    "http://localhost:3002",
+    "http://localhost:3003",
+    "http://localhost:3004"
+  ];
+  const requestPromises = [];
+  try {
+    for( var i=0; i<urls.length;i++){
+        console.log(`${urls[i-1]} register ${urls[i]}`)
+        const requestOptions = {
+            uri: urls[i]+"/validate/transaction",
+            method:"POST",
+            json:true,
+        }
+        requestPromises.push(rp(requestOptions))
+        console.log("Pushed")
+    }
+    Promise.all(requestPromises)
+    .then(data=>console.log(data))
+    .catch(err=>console.log("Internal Error: "+err))
+  } catch (error) {
+      console.log(`extrernal error: ${error}`)
+  }
+  
+} 
+
+setInterval(KeepAlive,60*1000)
+setInterval(validate,70*1000)
 
 app.get('/',(req,res)=>{
     const requestOptions = {
