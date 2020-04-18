@@ -52,7 +52,7 @@ class Transfer extends Component {
 
             var tableData = document.getElementById("table-body").innerHTML;
             document.getElementById("table-body").innerHTML =
-              tableData +
+               tableData +
               `<tr style="background-color:${style}">
           <td>${sender}</td>
           <td>${recipient}</td>
