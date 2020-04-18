@@ -1,7 +1,9 @@
 import React, { Component } from "react";
 import rp from "request-promise";
-import "materialize-css";
+import M from "materialize-css";
 import { Redirect } from "react-router-dom";
+import logo from "../media/logo_transparent.png"
+
 
 class Welcome extends Component {
   state = {
@@ -12,7 +14,7 @@ class Welcome extends Component {
     account: {},
     jwt: "",
     redirect: false,
-    registerComplete:false,
+    registerComplete: false,
     height: 0,
     width: 0
   };
@@ -63,12 +65,20 @@ class Welcome extends Component {
       .then(data => {
         if (data.error === undefined) {
           console.log(data);
-          this.setState({ jwt: data.token,account: data.account[0],redirect: true });
+          this.setState({
+            jwt: data.token,
+            account: data.account[0],
+            redirect: true
+          });
         } else {
-          window.alert("WRONG PRIVATE ADDRESS OR PASSWORD");
+          var toastHTML = "<span>wrong address or password</span>";
+          M.toast({ html: toastHTML });
         }
       })
-      .catch(err => console.log(err));
+      .catch(err => {
+        var toastHTML = "<span>Something went wrong</span>";
+        M.toast({ html: toastHTML });
+      });
   };
   register = event => {
     const id = "reg-pass-message";
@@ -112,7 +122,7 @@ class Welcome extends Component {
           console.log(data);
           privateAddress = data.data.account.privateAddress;
           publicAddress = data.data.account.publicAddress;
-          this.setState({registerComplete:true,account:data.data.account})
+          this.setState({ registerComplete: true, account: data.data.account });
         })
         .catch(err => console.log(err));
     }
@@ -132,7 +142,7 @@ class Welcome extends Component {
         <Redirect
           to={{
             pathname: "/welcome",
-            state: {account: this.state.account}
+            state: { account: this.state.account }
           }}
         />
       );
@@ -140,6 +150,7 @@ class Welcome extends Component {
       return (
         <div>
           <div class="container">
+            <img src={logo} width="200px" height="200px"></img>
             <h6>Welcome to Egycryptocurrency wallet</h6>
             <div class="row">
               <form class="col s12">
@@ -242,12 +253,13 @@ class Welcome extends Component {
                 </div>
               </form>
             </div>
-          </div>  
+          </div>
         </div>
       );
     else
       return (
         <div class="container">
+          <img src={logo} width="200px" height="200px"></img>
           <h2>Welcome to Egycryptocurrency wallet</h2>
           <div class="row">
             <form class="col s12">

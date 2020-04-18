@@ -77,8 +77,8 @@ function validate() {
   
 } 
 
-setInterval(KeepAlive,60*1000)
-setInterval(validate,70*1000)
+setInterval(KeepAlive,5*60*1000)
+setInterval(validate,2*60*1000)
 
 app.get('/',(req,res)=>{
     const requestOptions = {

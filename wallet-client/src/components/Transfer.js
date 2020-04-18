@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import rp from "request-promise";
 import { Redirect } from "react-router-dom";
 import M from "materialize-css";
+import logo from "../media/logo_transparent.png"
 class Transfer extends Component {
   state = {
     account: {},
@@ -11,7 +12,8 @@ class Transfer extends Component {
     amount: 0,
     height: 0,
     width: 0,
-    refresh:false
+    refresh: false,
+    loggedIn: true
   };
   componentDidMount() {
     const { width, height } = this.getWindowDimension();
@@ -52,7 +54,7 @@ class Transfer extends Component {
 
             var tableData = document.getElementById("table-body").innerHTML;
             document.getElementById("table-body").innerHTML =
-               tableData +
+              tableData +
               `<tr style="background-color:${style}">
           <td>${sender}</td>
           <td>${recipient}</td>
@@ -60,7 +62,6 @@ class Transfer extends Component {
         </tr>`;
           });
         } else {
-          var tableData = document.getElementById("table-body").innerHTML;
           document.getElementById("table-body").innerHTML =
             "<tr> <td colspan='3'>No Transactions Were Made</td></tr>";
         }
@@ -77,6 +78,16 @@ class Transfer extends Component {
       document.documentElement.clientHeight ||
       document.body.clientHeight;
     return { width, height };
+  };
+  logout = () => {
+    const requestOptions = {
+      uri: "https://boxcoin-wallet.herokuapp.com/logout",
+      method: "GET",
+      json: true
+    };
+    rp(requestOptions).then(data => {
+      this.setState({ loggedIn: false });
+    });
   };
   hasLowerCase = str => {
     return str.toUpperCase() !== str;
@@ -111,7 +122,10 @@ class Transfer extends Component {
       headers: {
         "x-access-token": this.props.location.state.jwt
       },
-      body: { amount: Number(this.state.amount), recipient: this.state.recipient }
+      body: {
+        amount: Number(this.state.amount),
+        recipient: this.state.recipient
+      }
     };
     if (this.state.amount > this.state.balance) {
       //window.alert("Insuffcient funds");
@@ -127,7 +141,7 @@ class Transfer extends Component {
             "<span>Your Transaction will be proccessed shortly</span>";
           M.toast({ html: toastHTML });
           this.clearTransfer();
-          window.location.reload()
+          window.location.reload();
         })
         .catch(err => {
           var toastHTML = "<span>Transaction Failed</span>";
@@ -137,13 +151,16 @@ class Transfer extends Component {
     }
   };
   render() {
+    if (!this.state.loggedIn) return <Redirect to="/" />;
     if (this.props.location.state.jwt != "")
       if (this.state.width < 450)
         return (
           <div>
             <div className="container">
+            <img src={logo} width="200px" height="200px"></img>
               <p>Welcome {this.props.location.state.account.publicAddress}</p>
               <h6>Your Balance is: {this.state.balance} BOX</h6>
+              <h6><a onClick={this.logout}>Click Here to Logout</a></h6>
               <br></br>
               <div class="row">
                 <h6>Transfer crypto to anyone in the network</h6>
@@ -202,12 +219,13 @@ class Transfer extends Component {
       else
         return (
           <div className="container">
+            <img src={logo} width="200px" height="200px"></img>
             <h6>Welcome</h6>
             <p style={{ fontSize: "10px" }}>
               {" "}
               {this.props.location.state.account.publicAddress}
             </p>
-            <h3>Your Balance is: {this.state.balance} BOX</h3>
+            <h4>Your Balance is: {this.state.balance} BOX</h4>
             <div class="row">
               <h6>Transfer crypto to anyone in the network</h6>
               <div class="input-field col s4">
@@ -256,6 +274,8 @@ class Transfer extends Component {
                 <tbody id="table-body"></tbody>
               </table>
             </div>
+            <br></br>
+            <a onClick={this.logout}>Logout</a>
           </div>
         );
     else return <Redirect to="/" />;
