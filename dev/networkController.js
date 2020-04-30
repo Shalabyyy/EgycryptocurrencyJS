@@ -10,13 +10,13 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
 function KeepAlive() {
-  /*const urls = [
+  const urls = [
     "https://egycryptocurrency-node-1.herokuapp.com",
     "https://egycryptocurrency-node-2.herokuapp.com",
     "https://egycryptocurrency-node-3.herokuapp.com",
     "https://egycryptocurrency-node-4.herokuapp.com"
-  ];*/
-  const urls = [
+  ];
+  const urls3 = [
     "http://localhost:3001",
     "http://localhost:3002",
     "http://localhost:3003",
@@ -44,13 +44,13 @@ function KeepAlive() {
   
 } 
 function validate() {
-  /*const urls = [
+  const urls = [
     "https://egycryptocurrency-node-1.herokuapp.com",
     "https://egycryptocurrency-node-2.herokuapp.com",
     "https://egycryptocurrency-node-3.herokuapp.com",
     "https://egycryptocurrency-node-4.herokuapp.com"
-  ];*/
-  const urls = [
+  ];
+  const urls3 = [
     "http://localhost:3001",
     "http://localhost:3002",
     "http://localhost:3003",
@@ -91,7 +91,7 @@ app.get('/',(req,res)=>{
         res.json({data:data})
     })
 })
-//setInterval(KeepAlive,30000)
+
 app.listen(port, () => {
   console.log(`Handler running on port ${port}`); 
 });
