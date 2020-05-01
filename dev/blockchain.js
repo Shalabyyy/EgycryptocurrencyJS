@@ -6,7 +6,7 @@ const currentNodeUrl = getUrl();
 
 function getUrl() {
   if (process.env.NODE_ENV === "production") {
-    return "https://egycryptocurrency-node-4.herokuapp.com";
+    return "https://egycryptocurrency-node-2.herokuapp.com";
   } else {
     return process.argv[3];
   }
