@@ -5,14 +5,21 @@ const BlockChain = require("./blockchain");
 const rp = require("request-promise");
 const joi = require("joi");
 const SHA256 = require("sha256");
+const url = require('url')
+const cors = require('cors')
 const currency = new BlockChain();
 
 const port = process.env.PORT || process.argv[2];
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(cors());
+
+
 
 app.get("/", (req, res) => {
+  const url = "https://"+req.headers.host
+  currency.currentNodeUrl =url
   res.json({ hello: "Welome to Egycryptocurrency" });
 });
 
@@ -433,7 +440,8 @@ app.post("/register-and-broadcast-node", (req, res) => {
   try {
     const data = req.body;
     const schema = joi.object().keys({
-      newNodeUrl: joi.string().required()
+      newNodeUrl: joi.string().required(),
+      publicAddress: joi.allow()
     });
     const valid = joi.validate(data, schema);
     if (valid.error !== null) {
@@ -443,6 +451,7 @@ app.post("/register-and-broadcast-node", (req, res) => {
 
     //Validation is Fine
     const nodeUrl = req.body.newNodeUrl;
+    const newPA =req.body.publicAddress
     var nodeAddress = "-1";
     //Check if it is not in the network
     if (currency.networkNodes.indexOf(nodeUrl) == -1) {
@@ -494,13 +503,15 @@ app.post("/register-and-broadcast-node", (req, res) => {
                   allNetworkAddresses: [
                     ...currency.networkAddresses,
                     currency.publicAddress
-                  ]
+                  ],
+                  publicAddress: newPA
                 },
                 json: true
               };
               return rp(bulkOptions);
             })
             .then(data => {
+
               res.json({
                 message: "Node successfuly registred in the netowrk"
               });
@@ -555,7 +566,8 @@ app.post("/register-nodes-bulk", (req, res) => {
     const data = req.body;
     const schema = joi.object().keys({
       allNetworkNodes: joi.array().required(),
-      allNetworkAddresses: joi.array().required()
+      allNetworkAddresses: joi.array().required(),
+      publicAddress: joi.allow()
     });
     const valid = joi.validate(data, schema);
     if (valid.error !== null) {
@@ -593,7 +605,8 @@ app.post("/register-nodes-bulk", (req, res) => {
         }
       }
     });
-
+    currency.publicAddress = req.body.publicAddress
+    console.log("hagat kter")
     const requestOptions = {
       uri: currency.currentNodeUrl + "/consensus",
       method: "GET",
@@ -729,6 +742,11 @@ app.delete("/disconnect", (req, res) => {
     res.json({ message: "Successfuly cleared the blockchain" });
   });
 });
+
+app.get("/testME", (req,res)=>{
+  res.json({message:"I Have The Same Code"})
+})
+
 app.listen(port, () => {
   console.log(`Listening on port ${port}`);
 });
