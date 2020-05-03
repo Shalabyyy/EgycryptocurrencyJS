@@ -181,9 +181,8 @@ Blockchain.prototype.getAddressdata = function(address) {
     });
   });
   this.validatedTransactions.forEach(transaction => {
-    console.log(transaction.sender)
-    if (transaction.sender == address)
-      balance1 = balance1 - transaction.amount;
+    console.log(transaction.sender);
+    if (transaction.sender == address) balance1 = balance1 - transaction.amount;
     if (transaction.recipient == address)
       balance1 = balance1 + transaction.amount;
   });
@@ -192,7 +191,7 @@ Blockchain.prototype.getAddressdata = function(address) {
     balance: balance1
   };
   this.balance = queryData.balance;
-  console.log(balance1)
+  console.log(balance1);
   return queryData;
 };
 Blockchain.prototype.validateTransaction = function(transaction) {
@@ -274,7 +273,40 @@ Blockchain.prototype.flushBlockChain = function() {
   this.createNewBlock(100, "0", "0");
   this.generateKeys();
 };
-Blockchain.prototype.addPublicAddress = function(newAddress){
-  this.networkAddresses.push(newAddress)
+Blockchain.prototype.addPublicAddress = function(newAddress) {
+  this.networkAddresses.push(newAddress);
+};
+Blockchain.prototype.getReserveExports = function() {
+  let amount = 0;
+  this.chain.forEach(block => {
+    block.transactions.forEach(transaction => {
+      if (transaction.sender == "00") amount = amount + transaction.amount;
+    });
+  });
+  this.validatedTransactions.forEach(transaction => {
+    if (transaction.sender == "00") amount = amount + transaction.amount;
+  });
+  console.log(`The Net Amount is${amount}`);
+  return amount;
+};
+Blockchain.prototype.getMiningReward = function() {
+  var amount = this.getReserveExports();
+  if (amount < 10000) return 50;
+  else if (amount <= 20000) return 25;
+  else if (amount <= 30000) return 12.5;
+  else if (amount <= 50000) return 6.25;
+};
+Blockchain.prototype.getMiningDifficulty = function(){
+  var amount = this.getReserveExports();
+  if (amount < 10000) return "00";
+  else if (amount <= 20000) return "000";
+  else if (amount <= 30000) return "0000";
+  else if (amount <= 50000) return "00000";
+  //Add new methods in code
+}
+Blockchain.prototype.selectBlock = function(blocks){
+  const length = blocks.length
+  //select a block randomly then validate
+
 }
 module.exports = Blockchain;

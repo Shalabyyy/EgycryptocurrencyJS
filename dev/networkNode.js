@@ -18,7 +18,8 @@ app.use(cors());
 
 
 app.get("/", (req, res) => {
-  const url = "https://"+req.headers.host
+  //Change to Https
+  const url = "http://"+req.headers.host
   currency.currentNodeUrl =url
   res.json({ hello: "Welome to Egycryptocurrency" });
 });
@@ -746,7 +747,11 @@ app.delete("/disconnect", (req, res) => {
 app.get("/testME", (req,res)=>{
   res.json({message:"I Have The Same Code"})
 })
-
+app.get("/reward",(req,res)=>{
+  const amount = currency.getMiningReward();
+  console.log(`The amount OUT is ${amount}`)
+   res.json({message:amount})
+})
 app.listen(port, () => {
   console.log(`Listening on port ${port}`);
 });
