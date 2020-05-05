@@ -10,7 +10,8 @@ class Login extends Component {
     jwt: "",
     redirect: false,
     height: 0,
-    width: 0
+    width: 0,
+    account:[]
   };
   handleChange = event => {
     console.log(event.target.value);
@@ -37,6 +38,7 @@ class Login extends Component {
           console.log(data);
           this.setState({
             jwt: data.token,
+            account: data.account[0],
             redirect: true
           });
         } else {
@@ -55,7 +57,7 @@ class Login extends Component {
         <Redirect
           to={{
             pathname: "/dashboard",
-            state: { jwt: this.state.jwt}
+            state: { jwt: this.state.jwt,account: this.state.account}
           }}
         />
       );

@@ -7,7 +7,7 @@ const SHA256 = require("sha256");
 const rp = require("request-promise");
 const jwt = require("jsonwebtoken");
 const path = require("path");
-const cors = require('cors')
+const cors = require("cors");
 const Wallet = require("./WalletAddress");
 const keys = require("../config/keys");
 
@@ -29,7 +29,6 @@ mongoose.connection
   .on("error", function(error) {
     console.log("Error is: ", error);
   });
-
 
 //API METHODS
 app.post("/register", async (req, res) => {
@@ -148,7 +147,7 @@ app.post("/send-funds", (req, res) => {
     console.log(validate.error);
     return res.json({ error: `Invalid  ${validate.error}` });
   }
-  const nodeNumber = (Math.floor(Math.random() * Math.floor(4))+1).toString();
+  const nodeNumber = (Math.floor(Math.random() * Math.floor(4)) + 1).toString();
   const requestOptions = {
     uri: `https://egycryptocurrency-node-${nodeNumber}.herokuapp.com/transaction/broadcast`,
     method: "POST",
@@ -177,29 +176,63 @@ app.get("/get-balance", (req, res) => {
         .send({ auth: false, message: "Failed to authenticate token." });
     publicAddress = decoded.publicAddress;
   });
-  console.log(publicAddress)    
-  const nodeNumber = (Math.floor(Math.random() * Math.floor(4))+1).toString();
+  console.log(publicAddress);
+  const nodeNumber = (Math.floor(Math.random() * Math.floor(4)) + 1).toString();
   const requestOptions = {
-      uri:`https://egycryptocurrency-node-${nodeNumber}.herokuapp.com/address/${publicAddress}`,
-      method:"GET",
-      json:true
-  }
+    uri: `https://egycryptocurrency-node-${nodeNumber}.herokuapp.com/address/${publicAddress}`,
+    method: "GET",
+    json: true
+  };
   rp(requestOptions)
-  .then(data =>res.json({message:data}))
-  .catch(error=> res.json({error:error}))
+    .then(data => res.json({ message: data }))
+    .catch(error => res.json({ error: error }));
 });
 
 app.get("/logout", function(req, res) {
   res.status(200).send({ auth: false, token: null });
 });
 
-
-  app.use(express.static("wallet-client/build"));
-  app.get("*", (req, res) => {
-    res.sendFile(path.resolve(__dirname, "wallet-client", "build", "index.html"));
+app.patch("/fix-link", async (req, res) => {
+  var token = req.headers["x-access-token"];
+  var publicAddress = "";
+  if (!token)
+    return res.status(401).send({ auth: false, message: "No token provided." });
+  jwt.verify(token, keys.tokenSecret, function(err, decoded) {
+    if (err)
+      return res
+        .status(500)
+        .send({ auth: false, message: "Failed to authenticate token." });
+    publicAddress = decoded.publicAddress;
   });
-  
+  var newUrl = req.body.newNodeUrl;
+  if (newUrl.includes("https://")) {
+    const update = await Wallet.findOneAndUpdate(
+      { publicAddress: publicAddress },
+      { nodeUrl: newUrl }
+    );
+    res.json({ update: update });
+  } else return res.status(401).json({ error: "Can not Add the new Url" });
+});
 
+app.get("/get-node-link", async (req, res) => {
+  var token = req.headers["x-access-token"];
+  var publicAddress = "";
+  if (!token)
+    return res.status(401).send({ auth: false, message: "No token provided." });
+  jwt.verify(token, keys.tokenSecret, function(err, decoded) {
+    if (err)
+      return res
+        .status(500)
+        .send({ auth: false, message: "Failed to authenticate token." });
+    publicAddress = decoded.publicAddress;
+  });
+  const result = await Wallet.find({ publicAddress: publicAddress });
+  return res.json({ nodeUrl: result });
+});
+app.use(express.static("wallet-client/build"));
+app.get("*", (req, res) => {
+  res.sendFile(path.resolve(__dirname, "wallet-client", "build", "index.html"));
+});
 
 app.listen(port, () => {
   console.log(`Wallet running on port ${port}`);

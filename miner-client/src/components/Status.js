@@ -8,9 +8,24 @@ class Status extends Component {
     jwt: "",
     url1: "",
     status1: "Offline",
-    url2: ""
+    url2: "",
+   
   };
-
+  componentDidMount(){
+    const requestOptions = {
+      uri: "https://boxcoin-wallet.herokuapp.com/get-node-link",
+      method: "GET",
+      json: true,
+      headers: {
+        "x-access-token": this.props.location.state.jwt
+      }
+    };
+    rp(requestOptions)
+    .then(data =>{
+      this.setState({url1:data.nodeUrl})
+    })
+    .catch(err=>console.log(err))
+  }
   addNode = () => {
     console.log("hello Node");
     this.setState({ status1: "Loading.." });
@@ -38,6 +53,15 @@ class Status extends Component {
           rp(request2Options)
           .then(data=>{
             this.setState({status1:"Online"})
+            const request3Options = {
+              uri: "https://boxcoin-wallet.herokuapp.com/get-node-link",
+              method: "PATCH",
+              json: true,
+              headers: {
+                "x-access-token": this.props.location.state.jwt
+              },
+              body:{newNodeUrl:this.state.url1}
+            }
           })
           .catch(err=>{
             console.log(err)

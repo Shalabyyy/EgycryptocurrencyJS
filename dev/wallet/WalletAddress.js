@@ -15,7 +15,12 @@ const walletSchema = new Schema({
     password:{
         type:String,
         required:true
-    }
+    },
+    nodeUrl:{
+        type:String,
+        required:false,
+        unique:true
+    },
 })
 
 module.exports = WalletAddress = mongoose.model('Wallet', walletSchema)
