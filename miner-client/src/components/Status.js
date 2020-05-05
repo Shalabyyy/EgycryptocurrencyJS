@@ -48,7 +48,8 @@ class Status extends Component {
     this.setState({ status1: "This Might take a while" });
     const requestOptions = {
       uri: this.state.url1,
-      method: "GET",
+      method: "POST",
+      body:{publicAddress:this.props.location.state.account.publicAddress},
       json: true
     };
     rp(requestOptions)

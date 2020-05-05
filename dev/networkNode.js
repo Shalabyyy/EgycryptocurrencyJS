@@ -19,11 +19,17 @@ app.use(cors());
 
 app.get("/", (req, res) => {
   //Change to Https
-  const url = "http://"+req.headers.host
-  currency.currentNodeUrl =url
+  const url = "https://"+req.headers.host
+  currency.currentNodeUrl = url
   res.json({ hello: "Welome to Egycryptocurrency" });
 });
-
+app.post("/", (req, res) => {
+  //Change to Https
+  const url = "https://"+req.headers.host
+  currency.currentNodeUrl = url
+  currency.publicAddress =req.body.publicAddress
+  res.json({ hello: "Welome to Egycryptocurrency" });
+});
 //Get BlockChain
 app.get("/blockchain", (req, res) => {
   const dataToShow = {
