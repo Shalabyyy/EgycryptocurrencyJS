@@ -60,7 +60,8 @@ app.post("/register", async (req, res) => {
   const user = new Wallet({
     privateAddress: privateAddress,
     publicAddress: publicAddress,
-    password: SHA256(req.body.password)
+    password: SHA256(req.body.password),
+    nodeUrl:""
   })
     .save()
     .then(wallet =>

@@ -96,7 +96,8 @@ Blockchain.prototype.proofOfWork = function(
   //for now assume only we want 4 leading Zeros
   var nonce = 0;
   var hash = this.hashBlock(previousBlockHash, currentBlockData, nonce);
-  while (hash.substring(0, 4) !== "0000") {
+  var target = this.getMiningDifficulty()
+  while (hash.substring(0, 4) !== target) {
     nonce++;
     hash = this.hashBlock(previousBlockHash, currentBlockData, nonce);
   }
@@ -298,10 +299,10 @@ Blockchain.prototype.getMiningReward = function() {
 };
 Blockchain.prototype.getMiningDifficulty = function(){
   var amount = this.getReserveExports();
-  if (amount < 10000) return "00";
-  else if (amount <= 20000) return "000";
-  else if (amount <= 30000) return "0000";
-  else if (amount <= 50000) return "00000";
+  if (amount < 10000) return "0000";
+  else if (amount <= 20000) return "0000";
+  else if (amount <= 30000) return "00000";
+  else if (amount <= 50000) return "000000";
   //Add new methods in code
 }
 Blockchain.prototype.selectBlock = function(blocks){

@@ -418,7 +418,7 @@ app.get("/mine", (req, res) => {
         uri: currency.currentNodeUrl + "/award-miner",
         method: "POST",
         body: {
-          amount: 12.5,
+          amount: parseFloat(currency.getMiningReward()),
           sender: "00",
           recipient: currency.publicAddress
         },
