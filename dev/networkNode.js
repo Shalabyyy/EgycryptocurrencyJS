@@ -30,6 +30,9 @@ app.post("/", (req, res) => {
   currency.publicAddress =req.body.publicAddress
   res.json({ hello: "Welome to Egycryptocurrency" });
 });
+app.get("/ping", (req, res) => {
+  res.json({ ping: "pong" });
+});
 //Get BlockChain
 app.get("/blockchain", (req, res) => {
   const dataToShow = {
