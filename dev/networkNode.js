@@ -17,6 +17,7 @@ app.use(cors());
 
 
 
+
 app.get("/", (req, res) => {
   //Change to Https
   const url = "https://"+req.headers.host
@@ -461,7 +462,7 @@ app.post("/register-and-broadcast-node", (req, res) => {
 
     //Validation is Fine
     const nodeUrl = req.body.newNodeUrl;
-    const newPA =req.body.publicAddress
+    const newPA = req.body.publicAddress
     var nodeAddress = "-1";
     //Check if it is not in the network
     if (currency.networkNodes.indexOf(nodeUrl) == -1) {

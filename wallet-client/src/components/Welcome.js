@@ -2,8 +2,8 @@ import React, { Component } from "react";
 import rp from "request-promise";
 import M from "materialize-css";
 import { Redirect } from "react-router-dom";
-import logo from "../media/logo_transparent.png"
-
+import Loader from "./Loader";
+import logo from "../media/logo_transparent.png";
 
 class Welcome extends Component {
   state = {
@@ -16,8 +16,11 @@ class Welcome extends Component {
     redirect: false,
     registerComplete: false,
     height: 0,
-    width: 0
+    width: 0,
+    loadingLogin: false,
+    loadingRegister: false
   };
+
   componentDidMount() {
     const { width, height } = this.getWindowDimension();
     this.setState({ height: height, width: width });
@@ -52,6 +55,8 @@ class Welcome extends Component {
     return str.match(/^[^a-zA-Z0-9]+$/) ? true : false;
   };
   login = event => {
+    this.setState({ loadingLogin: true });
+    //while(true);
     const requestOptions = {
       uri: "https://boxcoin-wallet.herokuapp.com/login",
       method: "POST",
@@ -71,16 +76,19 @@ class Welcome extends Component {
             redirect: true
           });
         } else {
+          this.setState({ loadingLogin: false });
           var toastHTML = "<span>wrong address or password</span>";
           M.toast({ html: toastHTML });
         }
       })
       .catch(err => {
+        this.setState({ loadingLogin: false });
         var toastHTML = "<span>Something went wrong</span>";
         M.toast({ html: toastHTML });
       });
   };
   register = event => {
+    this.setState({ loadingRegister: true });
     const id = "reg-pass-message";
     const pass1 = this.state.passwordReg1;
     const pass2 = this.state.passwordReg2;
@@ -98,10 +106,12 @@ class Welcome extends Component {
     if (pass1.length <= 7) {
       document.getElementById(id).style.color = "red";
       document.getElementById(id).innerText = error[1];
+      this.setState({ loadingRegister: false });
       return;
     } else if (pass1 !== pass2) {
       document.getElementById(id).style.color = "red";
       document.getElementById(id).innerText = error[0];
+      this.setState({ loadingRegister: false });
       return;
     } else {
       document.getElementById(id).style.color = "green";
@@ -122,9 +132,16 @@ class Welcome extends Component {
           console.log(data);
           privateAddress = data.data.account.privateAddress;
           publicAddress = data.data.account.publicAddress;
-          this.setState({ registerComplete: true, account: data.data.account });
+          this.setState({
+            registerComplete: true,
+            account: data.data.account,
+            loadingRegister: false
+          });
         })
-        .catch(err => console.log(err));
+        .catch(err => {
+          console.log(err);
+          this.setState({ loadingRegister: false });
+        });
     }
   };
   render() {
@@ -155,13 +172,15 @@ class Welcome extends Component {
             <div class="row">
               <form class="col s12">
                 <h6>Login into you wallet acccount</h6>
+                <div></div>
+
                 <div id="Row1">
                   <div class="row">
                     <div class="input-field">
                       <i class="material-icons prefix">verified_user</i>
                       <input
                         id="icon_vu"
-                        type="text"
+                        type="text" 
                         class="validate"
                         name="privateAddress"
                         value={this.state.privateAddress}
@@ -183,6 +202,9 @@ class Welcome extends Component {
                       />
                       <label for="icon_pwd1">Password</label>
                     </div>
+                  </div>
+                  <div class="container">
+                    {this.state.loadingLogin ? <Loader /> : <p></p>}
                   </div>
                   <div class="row">
                     <div class="input-field">
@@ -249,6 +271,9 @@ class Welcome extends Component {
                     <h6 id="reg-pass-message" style={{ paddingTop: "10px" }}>
                       Please enter you password
                     </h6>
+                    <div class="container">
+                      {this.state.loadingRegister ? <Loader /> : <p></p>}
+                    </div>
                   </div>
                 </div>
               </form>
@@ -297,6 +322,9 @@ class Welcome extends Component {
                 </div>
               </div>
               <div class="row">
+                <div class="container">
+                  {this.state.loadingLogin ? <Loader /> : <p></p>}
+                </div>
                 <h4>OR</h4>
               </div>
               <div class="row">
@@ -304,6 +332,7 @@ class Welcome extends Component {
                   Create a new Account by entering yout password, You will
                   recive your private address later
                 </h6>
+
                 <div class="input-field col s4">
                   <i class="material-icons prefix">lock</i>
                   <input
@@ -340,6 +369,9 @@ class Welcome extends Component {
                     Please enter you password
                   </h6>
                 </div>
+              </div>
+              <div class="container">
+                {this.state.loadingRegister ? <Loader /> : <p></p>}
               </div>
             </form>
           </div>

@@ -3,6 +3,8 @@ import rp from "request-promise";
 import { Redirect } from "react-router-dom";
 import M from "materialize-css";
 import logo from "../media/logo_transparent.png"
+import Loader from "./Loader";
+
 class Transfer extends Component {
   state = {
     account: {},
@@ -13,11 +15,14 @@ class Transfer extends Component {
     height: 0,
     width: 0,
     refresh: false,
-    loggedIn: true
+    loggedIn: true,
+    loadingTransfer:false,
+    loadingTable:false
   };
   componentDidMount() {
     const { width, height } = this.getWindowDimension();
     this.setState({
+      loadingTable:true,
       account: this.props.location.state.account,
       jwt: this.props.location.state.jwt,
       height: height,
@@ -51,7 +56,7 @@ class Transfer extends Component {
               recipient = "ME";
               style = "#ccffcc";
             }
-
+            this.setState({loadingTable:false});
             var tableData = document.getElementById("table-body").innerHTML;
             document.getElementById("table-body").innerHTML =
               tableData +
@@ -62,6 +67,7 @@ class Transfer extends Component {
         </tr>`;
           });
         } else {
+          this.setState({loadingTable:false});
           document.getElementById("table-body").innerHTML =
             "<tr> <td colspan='3'>No Transactions Were Made</td></tr>";
         }
@@ -213,6 +219,9 @@ class Transfer extends Component {
 
                 <tbody id="table-body"></tbody>
               </table>
+              <div class="container">
+                    {this.state.loadingTable ? <Loader /> : <p></p>}
+                  </div>
             </div>
           </div>
         );
@@ -273,6 +282,9 @@ class Transfer extends Component {
 
                 <tbody id="table-body"></tbody>
               </table>
+              <div class="container">
+                    {this.state.loadingTable ? <Loader /> : <p></p>}
+                  </div>
             </div>
             <br></br>
             <a onClick={this.logout}>Logout</a>

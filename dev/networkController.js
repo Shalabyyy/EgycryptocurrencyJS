@@ -36,7 +36,7 @@ function KeepAlive() {
         uri: urls[0] + "/register-and-broadcast-node",
         method: "POST",
         json: true,
-        body: { newNodeUrl: urls[i],publicAdress:"00" }
+        body: { newNodeUrl: urls[i], publicAddress: "00" }
       };
       requestPromises.push(rp(requestOptions));
       console.log("Pushed");
@@ -96,24 +96,46 @@ function pingPong() {
     for (var i = 0; i < addressList.length; i++) {
       pingPongTable.forEach(link => {
         if (addressList[i] === link.url) {
-          const requestToBeAdded ={
-            uri:link.url+"/ping",
-            method:"GET",
-            json:true
-          }
+          const requestToBeAdded = {
+            uri: link.url + "/ping",
+            method: "GET",
+            json: true
+          };
           rp(requestOptions)
-          .then(data =>{})
-          .catch(err=>{})
-        requestPromises.push(requestToBeAdded)
+            .then(data => {})
+            .catch(err => {});
+          requestPromises.push(requestToBeAdded);
         }
       });
     }
-    
   });
 }
-setInterval(KeepAlive, 5 * 60 * 1000);
-setInterval(validate, 2 * 60 * 1000);
-setInterval(pingPong, 4 * 60 * 60 * 1000);
+function mine() {
+  console.log("Mining Block")
+  const nodeNumber = (Math.floor(Math.random() * Math.floor(4)) + 1).toString();
+  const requestOptions = {
+    uri: `https://egycryptocurrency-node-${nodeNumber}.herokuapp.com/blockchain`,
+    method: "GET",
+    json: true
+  };
+  rp(requestOptions).then(data => {
+    const nodes = data.networkNodes;
+    var node = nodes[Math.floor(Math.random() * nodes.length)];
+    const minerRequestOptions = {
+      uri: node+"/mine",
+      method:"GET",
+      json:true
+    };
+    rp(minerRequestOptions).then(mining=>{
+      console.log(mining)
+    })
+  });
+}
+//setInterval(KeepAlive, 1 * 60 * 1000);
+//setInterval(validate, 2 * 60 * 1000);
+//setInterval(pingPong, 4 * 60 * 60 * 1000);
+//setInterval(mine, 12 * 60 * 60 * 1000);
+setTimeout(mine,1000)
 
 app.get("/", (req, res) => {
   const requestOptions = {
