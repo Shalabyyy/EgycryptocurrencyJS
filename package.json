@@ -15,7 +15,7 @@
     "wallet": "concurrently \"node dev/wallet/wallet.js\" \"npm start --prefix wallet-client\"",
     "miner": "concurrently \"node dev/wallet/wallet.js\" \"npm start --prefix miner-client\"",
     "wallet-redeploy": "npm install -- prefix wallet-client && npm run build --prefix wallet-client",
-    "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false"
+    "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false npm install -- prefix miner-client && npm run build --prefix miner-client"
   },
   "author": "",
   "license": "ISC",
