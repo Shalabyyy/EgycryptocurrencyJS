@@ -5,7 +5,7 @@
   "main": "dev/wallet/miner.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node dev/networkNode.js",
+    "start": "node dev/wallet/miner.js",
     "node_1": "nodemon networkNode.js 3001 http://localhost:3001",
     "node_2": "nodemon networkNode.js 3002 http://localhost:3002",
     "node_3": "nodemon networkNode.js 3003 http://localhost:3003",
@@ -15,6 +15,7 @@
     "wallet": "concurrently \"node dev/wallet/wallet.js\" \"npm start --prefix wallet-client\"",
     "miner": "concurrently \"node dev/wallet/wallet.js\" \"npm start --prefix miner-client\"",
     "wallet-redeploy": "npm install -- prefix wallet-client && npm run build --prefix wallet-client",
+
     "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false npm install -- prefix miner-client && npm run build --prefix miner-client"
   },
   "author": "",

@@ -10,11 +10,12 @@ app.use(bodyParser.urlencoded({ extended: false }));
 const port = process.env.PORT || 4000;
 
 
+app.get("/test", (req, res) => res.json({ msg: "Hello World" }));
+
 app.use(express.static("miner-client/build"));
 app.get("*", (req, res) => {
   res.sendFile(path.resolve(__dirname, "miner-client", "build", "index.html"));
 });
-
 app.listen(port, () => {
   console.log(`Miner running on port ${port}`);
 });
