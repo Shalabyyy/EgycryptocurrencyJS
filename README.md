@@ -29,3 +29,6 @@ Testing
 ---------------------
 If you wish to test in develoment mode, import the postman file on the postman app on your PC.
 
+How to contribute
+---------------------
+If you wish to join the betwork as a node, click [here](https://github.com/Shalabyyy/Egycryptucurrency-NODE)
