@@ -7,7 +7,7 @@ In order To run this project, you must have NodeJS insatlled. You can install No
 
 Setup
 ---------------------
-After Installing Node, you have to install the peoject dependenies.
+After Installing Node, you have to install the project dependenies.
 ```
 npm install
 cd wallet-client
