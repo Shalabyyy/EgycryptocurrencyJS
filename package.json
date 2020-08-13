@@ -2,7 +2,7 @@
   "name": "egycryptocurrencyjs",
   "version": "1.0.0",
   "description": "",
-  "main": "dev/networkNode.js",
+  "main": "dev/wallet/miner.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node dev/networkNode.js",
