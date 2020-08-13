@@ -11,6 +11,7 @@ function getUrl() {
     return process.argv[3];
   }
 }
+//Blockchain Constructor
 function Blockchain() {
   this.currentNodeUrl = currentNodeUrl;
   this.networkNodes = [];
@@ -22,10 +23,11 @@ function Blockchain() {
   this.publicAddress = SHA256(SHA256(this.currentNodeUrl));
   this.networkAddresses = [];
   this.balance = 0.0;
-  //Execute Functions
+  //Create Genisis Blocks
   this.createNewBlock(100, "0", "0");
   this.generateKeys();
 }
+//1- This method will be used after a block is mined, creating the block and adding it to the blockchain
 Blockchain.prototype.createNewBlock = function(nonce, previousBlockHash, hash) {
   const merkleTreeRoot = this.getMerkleRoot(this.validatedTransactions);
   const newBlock = {
@@ -42,9 +44,13 @@ Blockchain.prototype.createNewBlock = function(nonce, previousBlockHash, hash) {
 
   return newBlock;
 };
+
+//2- This method gets the last (most recent) block in the blockchain
 Blockchain.prototype.getLastBlock = function() {
   return this.chain[this.chain.length - 1];
 };
+
+//3- Given an input of  sender, recipient and an amount, This function will create an instance of a transaction
 Blockchain.prototype.createNewTransaction = function(
   sender,
   recipient,
@@ -70,15 +76,22 @@ Blockchain.prototype.createNewTransaction = function(
   };
   return newTransaction;
 };
+
+
+//4- This function will add the given transaction to the pending trasnaction list
 Blockchain.prototype.addTransactionToPendingTransactions = function(
   transaction
 ) {
   this.pendingTransactions.push(transaction);
   return this.chain.length;
 };
+
+//5- After validation, This function will add the given transaction to the validated trasnaction list
 Blockchain.prototype.addTransactionToValidTransactions = function(transaction) {
   this.validatedTransactions.push(transaction);
 };
+
+//6- This method will be used in the Pow computation to hash a block
 Blockchain.prototype.hashBlock = function(
   previousBlockHash,
   currentBlockData,
@@ -89,11 +102,13 @@ Blockchain.prototype.hashBlock = function(
   const hash = SHA256(data);
   return hash;
 };
+
+//7- This method will compute Pow
 Blockchain.prototype.proofOfWork = function(
   previousBlockHash,
   currentBlockData
 ) {
-  //for now assume only we want 4 leading Zeros
+  //Keep looping until the hash is found
   var nonce = 0;
   var hash = this.hashBlock(previousBlockHash, currentBlockData, nonce);
   var target = this.getMiningDifficulty()
@@ -103,8 +118,11 @@ Blockchain.prototype.proofOfWork = function(
   }
   return nonce;
 };
+
+//8- This method will validate each block in the blockchain
 Blockchain.prototype.chainIsValid = function(blockchain) {
   let validChain = true;
+  //Validate Each block
   for (var i = 1; i < blockchain.length; i++) {
     const currentBlock = blockchain[i];
     const previousBlock = blockchain[i - 1];
@@ -117,7 +135,7 @@ Blockchain.prototype.chainIsValid = function(blockchain) {
       currentBlockData,
       currentBlock.nonce
     );
-    if (blockHash.substring(0, 4) !== "0000") {
+    if (blockHash.substring(0, 4) !== this.getMiningDifficulty()) {
       console.log(currentBlock);
       console.log(
         `Invalid Block Hash Expected: ${currentBlock.hash}, Recieived: ${blockHash}`
@@ -136,6 +154,7 @@ Blockchain.prototype.chainIsValid = function(blockchain) {
       validChain = false;
     }
   }
+  //Validate Gensis Block
   const genisisBlock = blockchain[0];
   if (
     genisisBlock.index !== 1 ||
@@ -148,6 +167,8 @@ Blockchain.prototype.chainIsValid = function(blockchain) {
   }
   return validChain;
 };
+
+//9- This method will take a blockhash and return it's data
 Blockchain.prototype.getBlock = function(blockHash) {
   let resultBlock = null;
   this.chain.forEach(block => {
@@ -155,6 +176,8 @@ Blockchain.prototype.getBlock = function(blockHash) {
   });
   return resultBlock;
 };
+
+//10- This method will take a transaction id and return it's data
 Blockchain.prototype.getTransaction = function(transactionId) {
   let resultTransaction = null;
   this.chain.forEach(block => {
@@ -165,6 +188,8 @@ Blockchain.prototype.getTransaction = function(transactionId) {
   });
   return resultTransaction;
 };
+
+//11- This method will calculate the balance of the inputed address
 Blockchain.prototype.getAddressdata = function(address) {
   let transactionsMadeByAddress = [];
   var balance1 = 0;
@@ -195,6 +220,8 @@ Blockchain.prototype.getAddressdata = function(address) {
   console.log(balance1);
   return queryData;
 };
+
+//12- This method is used to validate a transaction
 Blockchain.prototype.validateTransaction = function(transaction) {
   const { amount, sender, recipient, transactionHash } = transaction;
   if (
@@ -214,6 +241,8 @@ Blockchain.prototype.validateTransaction = function(transaction) {
   const recipientNode = null;
   this.networkNodes.forEach(node => {});
 };
+
+//13- This method is used to generate public and private keys
 Blockchain.prototype.generateKeys = function() {
   crypto.generateKeyPair(
     "rsa",
@@ -237,6 +266,8 @@ Blockchain.prototype.generateKeys = function() {
     }
   );
 };
+
+//useless method
 Blockchain.prototype.testEncryption = function(data) {
   const bufferedData = new Buffer(data);
   console.log(this.privateKey);
@@ -248,6 +279,8 @@ Blockchain.prototype.testEncryption = function(data) {
   console.log(step2);
   console.log("Decryption complete");
 };
+
+//14- This method is used to compute the merkle tree root
 Blockchain.prototype.getMerkleRoot = function(transactions) {
   if (transactions.length == 0) {
     console.log("No Transactions");
@@ -259,6 +292,7 @@ Blockchain.prototype.getMerkleRoot = function(transactions) {
     return tree.root();
   });
 };
+//15- This method will reset the blockchain
 Blockchain.prototype.flushBlockChain = function() {
   this.currentNodeUrl = currentNodeUrl;
   this.networkNodes = [];
@@ -274,9 +308,12 @@ Blockchain.prototype.flushBlockChain = function() {
   this.createNewBlock(100, "0", "0");
   this.generateKeys();
 };
+
+//useless method, but it adds a public address to the list
 Blockchain.prototype.addPublicAddress = function(newAddress) {
   this.networkAddresses.push(newAddress);
 };
+//16- This method calculate how much coin has been exported from the coin reserve
 Blockchain.prototype.getReserveExports = function() {
   let amount = 0;
   this.chain.forEach(block => {
@@ -287,9 +324,10 @@ Blockchain.prototype.getReserveExports = function() {
   this.validatedTransactions.forEach(transaction => {
     if (transaction.sender == "00") amount = amount + transaction.amount;
   });
-  console.log(`The Net Amount is${amount}`);
+  console.log(`The Net Amount is ${amount}`);
   return amount;
 };
+//17- This method calculates the mining reward
 Blockchain.prototype.getMiningReward = function() {
   var amount = this.getReserveExports();
   if (amount < 10000) return 50;
@@ -297,6 +335,7 @@ Blockchain.prototype.getMiningReward = function() {
   else if (amount <= 30000) return 12.5;
   else if (amount <= 50000) return 6.25;
 };
+//18- This methgd calculates the mining reward
 Blockchain.prototype.getMiningDifficulty = function(){
   var amount = this.getReserveExports();
   if (amount < 10000) return "0000";

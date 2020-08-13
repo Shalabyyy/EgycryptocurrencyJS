@@ -15,27 +15,32 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cors());
 
+//DISCLAIMER: This class represents a node
 
-
-
+//PART ONE : HOME
+//1- The Homepage
 app.get("/", (req, res) => {
   //Change to Https
-  const url = "https://"+req.headers.host
+  const url = "https://" + req.headers.host
   currency.currentNodeUrl = url
   res.json({ hello: "Welome to Egycryptocurrency" });
 });
+
+//Disbanded
 app.post("/", (req, res) => {
   //Change to Https
-  const url = "https://"+req.headers.host
+  const url = "https://" + req.headers.host
   currency.currentNodeUrl = url
-  currency.publicAddress =req.body.publicAddress
+  currency.publicAddress = req.body.publicAddress
   res.json({ hello: "Welome to Egycryptocurrency" });
 });
 app.get("/ping", (req, res) => {
   res.json({ ping: "pong" });
 });
-//Get BlockChain
+
+//2- This Method gets the current blockchain state
 app.get("/blockchain", (req, res) => {
+  const url = "https://" + req.headers.host
   const dataToShow = {
     currentNodeUrl: currency.currentNodeUrl,
     networkNodes: currency.networkNodes,
@@ -49,36 +54,9 @@ app.get("/blockchain", (req, res) => {
   return res.send(dataToShow);
 });
 
-//Do a transaction
-app.post("/transaction", (req, res) => {
-  const newTransaction = req.body;
-  const data = req.body;
-  const schema = joi.object().keys({
-    sender: joi.allow(), //change to 2 or 64 later
-    recipient: joi.string().required(), //change to 64 later
-    amount: joi
-      .number()
-      .min(0)
-      .required(),
-    transactionHash: joi.allow(),
-    validationsNeeded: joi.allow()
-  });
-  const valid = joi.validate(data, schema);
-  if (valid.error !== null) {
-    console.log(valid.error);
-    return res.json({ error: `Invalid  ${valid.error}` });
-  }
-  //Validated Data from here
-  let message = "";
-  if (req.body.sender == "00") {
-    currency.addTransactionToValidTransactions(newTransaction);
-  } else {
-    message = currency.addTransactionToPendingTransactions(newTransaction);
-  }
-  return res.json({
-    message: `The transaction will be added to block ${message}`
-  });
-});
+//PART TWO: Transaction Creation
+
+//3- this method will create a transaction with the given inputs and will procced to broadcast them
 app.post("/transaction/broadcast", (req, res) => {
   //Validate Request Body
   const data = req.body;
@@ -134,6 +112,40 @@ app.post("/transaction/broadcast", (req, res) => {
     res.json({ message: "The Broadcast was successfull" });
   });
 });
+
+
+//4-This method register a transaction
+app.post("/transaction", (req, res) => {
+  const newTransaction = req.body;
+  const data = req.body;
+  const schema = joi.object().keys({
+    sender: joi.allow(), //change to 2 or 64 later
+    recipient: joi.string().required(), //change to 64 later
+    amount: joi
+      .number()
+      .min(0)
+      .required(),
+    transactionHash: joi.allow(),
+    validationsNeeded: joi.allow()
+  });
+  const valid = joi.validate(data, schema);
+  if (valid.error !== null) {
+    console.log(valid.error);
+    return res.json({ error: `Invalid  ${valid.error}` });
+  }
+  //Validated Data from here
+  let message = "";
+  if (req.body.sender == "00") {
+    currency.addTransactionToValidTransactions(newTransaction);
+  } else {
+    message = currency.addTransactionToPendingTransactions(newTransaction);
+  }
+  return res.json({
+    message: `The transaction will be added to block ${message}`
+  });
+});
+
+//5- Used for development purposes, This method will deposit the given amount to thegiven address
 app.post("/deposit", (req, res) => {
   //Validate Request Body
   const data = req.body;
@@ -177,6 +189,8 @@ app.post("/deposit", (req, res) => {
     });
   });
 });
+
+//6- After the mining, This method will be executed for the miner to receive their award
 app.post("/award-miner", (req, res) => {
   //Validate Request Body
   const data = req.body;
@@ -220,6 +234,8 @@ app.post("/award-miner", (req, res) => {
     res.json({ message: "The Broadcast was successfull" });
   });
 });
+
+//7- This methid wil allow the current node to approve or disapprove the current block
 app.post("/receive-new-block", (req, res) => {
   const newBlock = req.body.newBlock;
   const schema = joi.object().keys({
@@ -270,12 +286,13 @@ app.post("/receive-new-block", (req, res) => {
     return res.json({ message: "New Block Rejected", newBlock: newBlock });
   }
 });
-//Transaction Validation
+
+//8- This method is used update transactions to validated
 app.post("/set-valid", (req, res) => {
   console.log("Hi There");
   const request = req.body.transaction;
-  const valid= req.body.valid
-  if(valid){
+  const valid = req.body.valid
+  if (valid) {
     currency.pendingTransactions.forEach(transaction => {
       if (request.transactionHash == transaction.transactionHash) {
         const index = currency.pendingTransactions.indexOf(transaction);
@@ -289,7 +306,7 @@ app.post("/set-valid", (req, res) => {
       }
     });
   }
-  else{
+  else {
     console.log("LOLOLOLOLOLO")
     currency.pendingTransactions.forEach(transaction => {
       if (request.transactionHash == transaction.transactionHash) {
@@ -304,10 +321,11 @@ app.post("/set-valid", (req, res) => {
       }
     });
   }
-  
+
   return res.json({ message: "Successsfuly updated Transaction Array" });
 });
 
+//9- This method  will validate a trasnaction and broadscast the result to all network nodes
 app.post("/validate/transaction", (req, res) => {
   if (currency.pendingTransactions.length == 0) {
     return res.json({ error: "Nothing to Validate" });
@@ -394,7 +412,7 @@ app.post("/validate/transaction", (req, res) => {
   }
 });
 
-//Mine block
+//10- This method allows the node to mine the current block
 app.get("/mine", (req, res) => {
   //Get Previous hash
 
@@ -446,7 +464,7 @@ app.get("/mine", (req, res) => {
 
 //Network Functions
 
-//Add a node to the network an broadcast
+//11- Add a node to the network and broadcast
 app.post("/register-and-broadcast-node", (req, res) => {
   try {
     const data = req.body;
@@ -538,7 +556,8 @@ app.post("/register-and-broadcast-node", (req, res) => {
     console.log(error);
   }
 });
-//Register a Single Node
+
+//12- Register a Single Node
 app.post("/register-node", (req, res) => {
   try {
     const data = req.body;
@@ -571,7 +590,8 @@ app.post("/register-node", (req, res) => {
     console.log(error);
   }
 });
-//Register an Array of Nodes
+
+//13- Register an Array of Nodes
 app.post("/register-nodes-bulk", (req, res) => {
   try {
     const data = req.body;
@@ -630,6 +650,8 @@ app.post("/register-nodes-bulk", (req, res) => {
     console.log(error);
   }
 });
+
+//14- Achieve consensus with the network
 app.get("/consensus", (req, res) => {
   //Longest Chain Method
   const requestPromises = [];
@@ -682,24 +704,32 @@ app.get("/consensus", (req, res) => {
   });
 });
 
-//Getters
+//Getter Functions
+
+//15- Get Block
 app.get("/block/:blockhash", (req, res) => {
   const block = currency.getBlock(req.params.blockhash);
   res.json({ block: block });
 });
+
+//16- Get Transaction
 app.get("/transaction/:transactionId", (req, res) => {
   const transaction = currency.getTransaction(req.params.transactionId);
   res.json({ transaction: transaction });
 });
+
+//17- Get Balance
 app.get("/address/:address", (req, res) => {
   const transactions = currency.getAddressdata(req.params.address);
   res.json({ result: transactions });
 });
-app.get("/block-explorer", function(req, res) {
+
+//Disbanded
+app.get("/block-explorer", function (req, res) {
   res.sendFile("./block-explorer/index.html", { root: __dirname });
 });
 
-//Registering new Wallets (OPTIONAL)
+//Registering new Wallets (OPTIONAL). This part is Left onlt to show progress
 app.post("/add-address", (req, res) => {
   currency.addPublicAddress(req.body.address);
   return res.json({
@@ -727,6 +757,10 @@ app.post("/add-address-broadcast", (req, res) => {
     .catch(error => res.json({ error: error }));
 });
 
+
+//Malware Detection
+
+//18- This function will request a node to be removed
 app.patch("/remove-node", (req, res) => {
   const nodeToBeDeleted = req.body.nodeToBeDeleted;
   //For Consistency Purposes We wont remove the address
@@ -736,6 +770,8 @@ app.patch("/remove-node", (req, res) => {
     return res.json({ message: "Node Was successfuly deleted" });
   } else return res.json({ error: "Failed to delete Node" });
 });
+
+//19- This function willl remove the current node from the network
 app.delete("/disconnect", (req, res) => {
   const requestPromises = [];
   currency.networkNodes.forEach(nodeUrl => {
@@ -754,13 +790,16 @@ app.delete("/disconnect", (req, res) => {
   });
 });
 
-app.get("/testME", (req,res)=>{
-  res.json({message:"I Have The Same Code"})
+//20- This method is used in the network controller classs
+app.get("/testME", (req, res) => {
+  res.json({ message: "I Have The Same Code" })
 })
-app.get("/reward",(req,res)=>{
+
+//21 - This endpoint shows the current mining reward
+app.get("/reward", (req, res) => {
   const amount = currency.getMiningReward();
   console.log(`The amount OUT is ${amount}`)
-   res.json({message:amount})
+  res.json({ message: amount })
 })
 app.listen(port, () => {
   console.log(`Listening on port ${port}`);
