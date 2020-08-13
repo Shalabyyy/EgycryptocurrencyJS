@@ -25,6 +25,7 @@ Running
 * To run the Wallet app  ```npm run wallet```
 * To run the Miner app ```npm run miner```
 
-
-
+Testing
+---------------------
+If you wish to test in develoment mode, import the postman file on the postman app on your PC.
 
