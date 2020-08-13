@@ -631,12 +631,12 @@ app.post("/register-nodes-bulk", (req, res) => {
         currency.publicAddress != address
       ) {
         if (address != null && address != undefined) {
-          console.log(address);
+          console.log(address); 
           currency.networkAddresses.push(address);
         }
       }
     });
-    currency.publicAddress = req.body.publicAddress
+    currency.publicAddress = req.body.publicAddress  
     console.log("hagat kter")
     const requestOptions = {
       uri: currency.currentNodeUrl + "/consensus",

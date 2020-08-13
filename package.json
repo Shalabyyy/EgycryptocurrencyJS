@@ -13,7 +13,8 @@
     "node_5": "nodemon networkNode.js 3005 http://localhost:3005",
     "dapp": "concurrently \"npm run node_1\" \"npm run node_2\" \"npm run node_3\" \"npm run node_4\"",
     "wallet": "concurrently \"node dev/wallet/wallet.js\" \"npm start --prefix wallet-client\"",
-    "wallet-redeploy":"npm install -- prefix wallet-client && npm run build --prefix wallet-client",
+    "miner": "concurrently \"node dev/wallet/wallet.js\" \"npm start --prefix miner-client\"",
+    "wallet-redeploy": "npm install -- prefix wallet-client && npm run build --prefix wallet-client",
     "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false"
   },
   "author": "",
@@ -33,7 +34,7 @@
     "merkle": "^0.6.0",
     "mongoose": "^5.9.7",
     "node-rsa": "^1.0.7",
-    "nodemon": "^2.0.2",
+    "nodemon": "^2.0.4",
     "request": "^2.88.2",
     "request-ip": "^2.1.3",
     "request-promise": "^4.2.5",
