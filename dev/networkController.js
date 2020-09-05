@@ -131,11 +131,11 @@ function mine() {
     })
   });
 }
-//setInterval(KeepAlive, 1 * 60 * 1000);
-//setInterval(validate, 2 * 60 * 1000);
+setInterval(KeepAlive, 1 * 60 * 1000);
+setInterval(validate, 0.5 * 60 * 1000);
 //setInterval(pingPong, 4 * 60 * 60 * 1000);
 //setInterval(mine, 12 * 60 * 60 * 1000);
-setTimeout(mine,1000)
+//setTimeout(mine,1000)
 
 app.get("/", (req, res) => {
   const requestOptions = {
